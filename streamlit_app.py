@@ -1,58 +1,115 @@
 import streamlit as st
+import requests
 from openai import OpenAI
+from datetime import datetime
+import json
 
-# Show title and description.
+# 🚀 Title and Description
 st.title("🐷 Piglet")
-st.write("Chattrobot av Thom & Deer. ")
+st.write("Chattrobot av Thom & Deer.")
 
-# Get API key from secrets.toml
+# 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
+# 🌎 Function to Get Visitor IP and Location
+def get_user_info():
+    try:
+        response = requests.get("https://ipinfo.io/json")
+        data = response.json()
+        return {
+            "ip": data.get("ip", "Unknown"),
+            "city": data.get("city", "Unknown"),
+            "country": data.get("country", "Unknown"),
+            "region": data.get("region", "Unknown"),
+            "org": data.get("org", "Unknown"),
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+# 🚫 Geo-Blocking (Deny Access for Specific Countries)
+blocked_countries = ["CN", "RU", "KP", "IR"]  # China, Russia, North Korea, Iran
+user_info = get_user_info()
+
+if user_info.get("country") in blocked_countries:
+    st.error("🚨 Access Denied: Your country is restricted.")
+    st.stop()  # Stop execution for blocked users
+
+# 📜 Log Visitors
+log_file = "visitor_log.json"
+
+# Load previous logs
+try:
+    with open(log_file, "r") as f:
+        visitor_logs = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    visitor_logs = []
+
+# Append new visitor and save logs
+visitor_logs.append(user_info)
+
+with open(log_file, "w") as f:
+    json.dump(visitor_logs, f, indent=4)
+
+# 📝 Display Visitor Log
+st.write("### Visitor Log")
+st.table(visitor_logs)
+
+# 🚨 Rate Limiting (Prevent Brute Force)
+if "request_count" not in st.session_state:
+    st.session_state.request_count = 0
+
+st.session_state.request_count += 1
+
+if st.session_state.request_count > 10:
+    st.error("🚨 Too many requests! Try again later.")
+    st.stop()  # Stop execution if request limit is exceeded
+
+# 🚀 Chatbot Logic
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
     # Create an OpenAI client.
     client = OpenAI(api_key=openai_api_key)
 
-    # Define avatars for user and assistant
-    avatar_user = "😶"  # User avatar
-    avatar_assistant = "🐷"  # Assistant avatar
+    # 🧑‍🎤 Define Avatars
+    avatar_user = "😶"
+    avatar_assistant = "🐷"
 
-    # Define system message (modify this to affect tonality)
+    # 🎭 Define System Message for Chat Tone
     system_message = {
         "role": "system",
         "content": "Du är en chattrobot som motvilligt svarar på användares frågor. "
-                   "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt. "
+                   "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt."
     }
 
-    # Initialize session state for chat messages
+    # 🔄 Initialize Chat Session
     if "messages" not in st.session_state:
-        st.session_state.messages = [system_message]  # Start chat history with system message
+        st.session_state.messages = [system_message]  # Start with system message
 
-    # Display existing chat messages (excluding system message)
+    # 📜 Display Previous Messages (Hide System)
     for message in st.session_state.messages:
-        if message["role"] != "system":  # Hide system message from chat UI
+        if message["role"] != "system":
             avatar = avatar_user if message["role"] == "user" else avatar_assistant
             with st.chat_message(message["role"], avatar=avatar):
                 st.markdown(f"<p style='font-size:22px'>{message['content']}</p>", unsafe_allow_html=True)
 
-    # Chat input for user message
+    # ✍️ User Chat Input
     if prompt := st.chat_input("Vad vill du?"):
-        # Store and display user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=avatar_user):
             st.markdown(prompt)
 
-        # Generate assistant response using OpenAI API
+        # 🤖 Generate AI Response
         stream = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=st.session_state.messages,  # Include system message in request
+            messages=st.session_state.messages,
             stream=True,
         )
 
-        # Display assistant response with avatar
+        # 💬 Display AI Response
         with st.chat_message("assistant", avatar=avatar_assistant):
             response = st.write_stream(stream)
 
-        # Save assistant response to session state
+        # 💾 Save AI Response
         st.session_state.messages.append({"role": "assistant", "content": response})
