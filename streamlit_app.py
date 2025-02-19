@@ -21,8 +21,8 @@ else:
     # Define system message (modify this to affect tonality)
     system_message = {
         "role": "system",
-        "content": "You are a helpful, friendly, and slightly humorous AI assistant. "
-                   "Keep responses engaging, professional, and concise."
+        "content": "Du är en chattrobot som motvilligt svarar på användares frågor. "
+                   "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt. "
     }
 
     # Initialize session state for chat messages
