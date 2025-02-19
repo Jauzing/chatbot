@@ -11,6 +11,19 @@ st.write("Chattrobot av Thom & Deer.")
 # 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
+
+# 🎭 Sidebar Input for Assistant Personality
+assistant_type = st.sidebar.text_area(
+    label="""📝 Vad ska assistenten vara för typ? 
+    Exempel: 
+    'Du är en chattrobot som älskar fotboll. Använd fotbollstermer för att svara på frågor. Dra skämt om fotboll. Berätta anekdoter om fotboll.'",
+    'Du heter Oskar och kan bara svara med emojis, formaterade i onödigt komplexa tabeller.'""",
+    value="Du är en hjälpsam chattrobot som svarar på användarens frågor.",
+    height=250  # Increased height
+)
+
+
+
 # 🎭 Sidebar Input for Assistant Personality
 assistant_type = st.sidebar.text_area(
     "📝 Vad ska assistenten vara för typ?",
