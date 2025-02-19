@@ -34,6 +34,7 @@ else:
     for message in st.session_state.messages:
             avatar = avatar_user if message["role"] == "user" else avatar_assistant
             with st.chat_message(message["role"], avatar=avatar):
+                st.markdown(f"<p style='font-size:22px'>{message['content']}</p>", unsafe_allow_html=True)
                 st.markdown(message["content"])
 
     # Create a chat input field to allow the user to enter a message. This will display
