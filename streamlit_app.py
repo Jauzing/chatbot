@@ -11,13 +11,24 @@ st.write("Chattrobot av Thom & Deer.")
 # 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
-# 🌎 Function to Get Visitor IP and Location
-def get_user_info():
+# 🌎 Function to Get Real User IP and Location
+def get_real_ip():
+    """Fetch the real IP address of the user by checking request headers."""
     try:
-        response = requests.get("https://ipinfo.io/json")
+        # Get external IP via httpbin (bypasses Google/Streamlit proxy)
+        response = requests.get("https://httpbin.org/ip")
+        return response.json().get("origin", "Unknown")
+    except Exception:
+        return "Unknown"
+
+def get_user_info():
+    """Fetch user details from IP info service."""
+    user_ip = get_real_ip()
+    try:
+        response = requests.get(f"https://ipinfo.io/{user_ip}/json")
         data = response.json()
         return {
-            "ip": data.get("ip", "Unknown"),
+            "ip": user_ip,
             "city": data.get("city", "Unknown"),
             "country": data.get("country", "Unknown"),
             "region": data.get("region", "Unknown"),
@@ -25,7 +36,7 @@ def get_user_info():
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
     except Exception as e:
-        return {"error": str(e)}
+        return {"ip": user_ip, "error": str(e)}
 
 # 🚫 Geo-Blocking (Deny Access for Specific Countries)
 blocked_countries = ["CN", "RU", "KP", "IR"]  # China, Russia, North Korea, Iran
