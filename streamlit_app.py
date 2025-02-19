@@ -11,6 +11,13 @@ st.write("Chattrobot av Thom & Deer.")
 # 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
+# 🎭 Sidebar Input for Assistant Personality
+assistant_type = st.sidebar.text_area(
+    "📝 Vad ska assistenten vara för typ?",
+    "Du är en chattrobot som motvilligt svarar på användares frågor. "
+    "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt."
+)
+
 # 🚨 Rate Limiting (Prevent Brute Force)
 if "request_count" not in st.session_state:
     st.session_state.request_count = 0
@@ -19,29 +26,26 @@ st.session_state.request_count += 1
 
 if st.session_state.request_count > 8:
     st.error("🚨 Too many requests! Try again later.")
-    st.stop()  # Stop execution if request limit is exceeded
+    st.stop()
 
 # 🚀 Chatbot Logic
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
-    # Create an OpenAI client.
+    # Create an OpenAI client
     client = OpenAI(api_key=openai_api_key)
 
     # 🧑‍🎤 Define Avatars
     avatar_user = "😶"
     avatar_assistant = "🐷"
 
-    # 🎭 Define System Message for Chat Tone
-    system_message = {
-        "role": "system",
-        "content": "Du är en chattrobot som motvilligt svarar på användares frågor. "
-                   "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt."
-    }
+    # 🎭 Define System Message (Updated on the fly)
+    system_message = {"role": "system", "content": assistant_type}
 
     # 🔄 Initialize Chat Session
-    if "messages" not in st.session_state:
-        st.session_state.messages = [system_message]  # Start with system message
+    if "messages" not in st.session_state or st.session_state.get("last_assistant_type") != assistant_type:
+        st.session_state.messages = [system_message]  # Reset chat history when assistant type changes
+        st.session_state.last_assistant_type = assistant_type  # Store last selected assistant type
 
     # 📜 Display Previous Messages (Hide System)
     for message in st.session_state.messages:
@@ -59,7 +63,7 @@ else:
         # 🤖 Generate AI Response
         stream = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=st.session_state.messages,
+            messages=st.session_state.messages,  # Include dynamically updated system message
             stream=True,
         )
 
