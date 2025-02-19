@@ -15,7 +15,9 @@ openai_api_key = st.secrets.get("OPENAI_API_KEY")
 assistant_type = st.sidebar.text_area(
     "📝 Vad ska assistenten vara för typ?",
     "Du är en chattrobot som motvilligt svarar på användares frågor. "
-    "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt."
+    "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt.",
+    height=150  # Increased height
+
 )
 
 # 🚨 Rate Limiting (Prevent Brute Force)
