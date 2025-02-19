@@ -2,8 +2,8 @@ import streamlit as st
 from openai import OpenAI
 
 # Show title and description.
-st.title("💬 Davids chatbot")
-st.write("This is a simple chatbot that uses OpenAI's GPT-4o-mini model to generate responses.")
+st.title("🐷 Piglet")
+st.write("Denna chattrobot drivs av GPT4o mini. ")
 
 # Get API key from secrets.toml
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
