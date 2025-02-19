@@ -26,10 +26,15 @@ else:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Define avatars for user and assistant
+    avatar_user = "😶"  # Or use a custom image path
+    avatar_assistant = "🤖"  # Or use a custom image path
+    
     # Display the existing chat messages via `st.chat_message`.
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            avatar = avatar_user if message["role"] == "user" else avatar_assistant
+            with st.chat_message(message["role"], avatar=avatar):
+                st.markdown(message["content"])
 
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
@@ -50,8 +55,9 @@ else:
             stream=True,
         )
 
-        # Stream the response to the chat using `st.write_stream`, then store it in
-        # session state.
-        with st.chat_message("assistant"):
+        # Display assistant response with avatar
+        with st.chat_message("assistant", avatar=avatar_assistant):
             response = st.write_stream(stream)
+            
+        # Save response to session state
         st.session_state.messages.append({"role": "assistant", "content": response})
