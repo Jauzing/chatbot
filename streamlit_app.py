@@ -14,8 +14,8 @@ openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
 # 🎭 Sidebar Input for Assistant Personality
 assistant_type = st.sidebar.text_area(
-    "📝 Vad ska assistenten vara för typ?",
-    value="Du är en chattrobot som motvilligt svarar på användares frågor. "
+    "📝 Vad ska assistenten vara för typ? Exempel: Du är en chattrobot som älskar fotboll. Använd fotbollstermer för att svara på frågor. Dra skämt om fotboll. Berätta anekdoter om fotboll. Du heter Oskar och kan bara svara med emojis, formaterade i onödigt komplexa tabeller ",
+    value="Du är en chattrobot som motvilligt svarar på användares frågor."
           "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt.",
     height=150  # Increased height
 )
