@@ -3,7 +3,7 @@ from openai import OpenAI
 
 # Show title and description.
 st.title("🐷 Piglet")
-st.write("Denna chattrobot drivs av GPT4o mini. ")
+st.write("Chattrobot av Thom & Deer. ")
 
 # Get API key from secrets.toml
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
