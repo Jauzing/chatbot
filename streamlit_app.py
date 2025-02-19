@@ -16,7 +16,7 @@ else:
 
     # Define avatars for user and assistant
     avatar_user = "😶"  # User avatar
-    avatar_assistant = "🤖"  # Assistant avatar
+    avatar_assistant = "🐷"  # Assistant avatar
 
     # Define system message (modify this to affect tonality)
     system_message = {
