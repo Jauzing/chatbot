@@ -36,7 +36,7 @@ if "advanced_access" not in st.session_state:
 # Password Input for Advanced Models
 if not st.session_state.advanced_access:
     password_input = st.sidebar.text_input("🔒 Ange lösenord för avancerade modeller:", type="password")
-    if password_input == ADVANCED_MODELS_PASSWORD:
+    if password_input == STREAMLIT_PASSWORD:
         st.session_state.advanced_access = True
         st.sidebar.success("✅ Avancerade modeller upplåsta!")
 
