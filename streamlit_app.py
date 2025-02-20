@@ -19,7 +19,7 @@ assistant_type = st.sidebar.text_area(
     "📝 Vad ska assistenten vara för typ?\n\n"
     "**Exempel:**\n"
     "- 🏆 Du är en chattrobot som älskar fotboll. Använd fotbollstermer för att svara på frågor. Dra skämt om fotboll. Berätta anekdoter om fotboll.\n",
-    value="Skriv här",
+    value=" ",
     height=150
 )
 
