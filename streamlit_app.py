@@ -28,7 +28,7 @@ assistant_type = st.sidebar.text_area(
 
 # 🔑 Model Selection with Password Protection
 basic_models = ["gpt-3.5-turbo", "gpt-4-turbo"]
-advanced_models = ["gpt-4o-mini", "gpt-4o", "gpt-4"]
+advanced_models = ["gpt-4o", "gpt-4o-mini", "o1", "o3-mini"]
 
 if "advanced_access" not in st.session_state:
     st.session_state.advanced_access = False
@@ -42,7 +42,7 @@ if not st.session_state.advanced_access:
 
 # Model Selection
 available_models = basic_models + advanced_models if st.session_state.advanced_access else basic_models
-selected_model = st.sidebar.selectbox("🛠 Välj GPT-modell:", available_models)
+selected_model = st.sidebar.selectbox("🚗 Välj GPT-modell:", available_models)
 
 # 🚨 Rate Limiting (Prevent Brute Force)
 if "request_count" not in st.session_state:
@@ -50,7 +50,7 @@ if "request_count" not in st.session_state:
 
 st.session_state.request_count += 1
 
-if st.session_state.request_count > 8:
+if not st.session_state.advanced_access and st.session_state.request_count > 8:
     st.error("🚨 För många förfrågningar! Försök igen senare.")
     st.stop()
 
