@@ -11,8 +11,8 @@ st.write("Chattrobot av Thom & Deer.")
 # 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
-advanced_models_password = st.secrets.get("STREAMLIT_PASSWORD")
-
+# 🔑 Define Password for Advanced Models
+STREAMLIT_PASSWORD = st.secrets.get("STREAMLIT_PASSWORD")
 
 # 🎭 Sidebar Input for Assistant Personality
 assistant_type = st.sidebar.text_area(
@@ -23,10 +23,26 @@ assistant_type = st.sidebar.text_area(
     "- 🤖 Du heter Oskar och kan bara svara med emojis, formaterade i onödigt komplexa tabeller.\n",
     value="Du är en chattrobot som motvilligt svarar på användares frågor. "
           "Ditt svar ska vara ironiskt, cyniskt, och/eller sarkastiskt.",
-    height=150  # Increased height
+    height=150
 )
 
+# 🔑 Model Selection with Password Protection
+basic_models = ["gpt-3.5-turbo", "gpt-4-turbo"]
+advanced_models = ["gpt-4o-mini", "gpt-4o", "gpt-4"]
 
+if "advanced_access" not in st.session_state:
+    st.session_state.advanced_access = False
+
+# Password Input for Advanced Models
+if not st.session_state.advanced_access:
+    password_input = st.sidebar.text_input("🔒 Ange lösenord för avancerade modeller:", type="password")
+    if password_input == ADVANCED_MODELS_PASSWORD:
+        st.session_state.advanced_access = True
+        st.sidebar.success("✅ Avancerade modeller upplåsta!")
+
+# Model Selection
+available_models = basic_models + advanced_models if st.session_state.advanced_access else basic_models
+selected_model = st.sidebar.selectbox("🛠 Välj GPT-modell:", available_models)
 
 # 🚨 Rate Limiting (Prevent Brute Force)
 if "request_count" not in st.session_state:
@@ -35,7 +51,7 @@ if "request_count" not in st.session_state:
 st.session_state.request_count += 1
 
 if st.session_state.request_count > 8:
-    st.error("🚨 Too many requests! Try again later.")
+    st.error("🚨 För många förfrågningar! Försök igen senare.")
     st.stop()
 
 # 🚀 Chatbot Logic
@@ -72,7 +88,7 @@ else:
 
         # 🤖 Generate AI Response
         stream = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=selected_model,  # User-selected model
             messages=st.session_state.messages,  # Include dynamically updated system message
             stream=True,
         )
