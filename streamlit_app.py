@@ -11,6 +11,8 @@ st.write("Chattrobot av Thom & Deer.")
 # 🔐 Load OpenAI API Key from secrets
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
+advanced_models_password = st.secrets.get("STREAMLIT_PASSWORD")
+
 
 # 🎭 Sidebar Input for Assistant Personality
 assistant_type = st.sidebar.text_area(
