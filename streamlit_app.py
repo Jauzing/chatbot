@@ -48,10 +48,10 @@ with st.sidebar.expander("ℹ️ Modellinformation"):
         **gpt-3.5-turbo:** Effektiv, snabb och utmärkt för allmänna uppgifter med måttligt resonemang.  
         **gpt-4-turbo:** Förbättrad prestanda med starkare resonemangsförmåga.
 
-        **gpt-4o:** Erbjuder djupgående resonemang och avancerade tankekedjor.  
+        **gpt-4o:** Erbjuder avancerade resonemang och tankekedjor (chain-of-thought).  
         **gpt-4o-mini:** En kompakt version som levererar avancerat resonemang till en lägre kostnad.  
-        **o1:** Optimerad för uppgifter som kräver djupgående analys och utförliga resonemang.  
-        **o3-mini:** En mini-version av o3, som balanserar kostnad med djupgående resonemang.
+        **o1:** Optimerad för uppgifter som kräver djupgående analys och resonemang (Reasoning model).  
+        **o3-mini:** En mini-version av kommande o3, som balanserar kostnad med djupgående resonemang.
         """
     )
 
