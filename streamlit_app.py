@@ -3,10 +3,6 @@ import requests
 from openai import OpenAI
 from datetime import datetime
 import json
-import random
-import streamlit.components.v1 as components
-import base64
-import os
 
 # 🚀 Titel och beskrivning
 st.title("🐷 Piglet")
@@ -99,61 +95,6 @@ else:
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=avatar_user):
             st.markdown(prompt)
-
-
-        # Visualisering: Ordens "toss" och dinosauriens gång över skärmen
-        words = prompt.split()
-        html_content = """
-        <html>
-        <head>
-          <style>
-            body {
-                margin: 0;
-                padding: 0;
-                background: #f0f0f0;
-                overflow: hidden;
-                font-family: Arial, sans-serif;
-            }
-            .word {
-                position: absolute;
-                font-size: 24px;
-                font-weight: bold;
-                animation: toss 3s ease-out forwards;
-            }
-            @keyframes toss {
-                0%% {
-                    transform: translate(0, 0) rotate(0deg);
-                    opacity: 1;
-                }
-                100%% {
-                    transform: translate(%(translateX)dpx, %(translateY)dpx) rotate(720deg);
-                    opacity: 0;
-                }
-            }
-            .dinosaur {
-                position: absolute;
-                width: 50px;
-                animation: run 5s linear infinite;
-            }
-            @keyframes run {
-                0%% { left: -60px; }
-                100%% { left: 110%%; }
-            }
-          </style>
-        </head>
-        <body>
-        """ % {"translateX": random.randint(100, 300), "translateY": random.randint(-150, 150)}
-
-        for i, word in enumerate(words):
-            top = random.randint(0, 200)
-            left = random.randint(0, 200)
-            color = "#%06x" % random.randint(0, 0xFFFFFF)
-            delay = i * 0.2  # stagger animations
-            html_content += f'<span class="word" style="top:{top}px; left:{left}px; color:{color}; animation-delay:{delay}s;">{word}</span>\n'
-
-        html_content += "</body></html>"
-
-        components.html(html_content, height=500)
 
         # 🤖 Generera AI-svar
         stream = client.chat.completions.create(
