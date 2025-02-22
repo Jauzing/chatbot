@@ -5,6 +5,8 @@ from datetime import datetime
 import json
 import random
 import streamlit.components.v1 as components
+import base64
+import os
 
 # 🚀 Titel och beskrivning
 st.title("🐷 Piglet")
@@ -98,7 +100,18 @@ else:
         with st.chat_message("user", avatar=avatar_user):
             st.markdown(prompt)
 
-        # Visualize the tossed words and dinosaur
+        # Läs in den lokala dinosauriebilden (se till att filen "dinosaur.png" finns i samma katalog)
+        try:
+            with open("dinosaur.png", "rb") as img_file:
+                dino_bytes = img_file.read()
+            dino_b64 = base64.b64encode(dino_bytes).decode("utf-8")
+            # Justera MIME-typen om det är en annan filtyp, t.ex. image/gif för .gif
+            dinosaur_url = f"data:image/png;base64,{dino_b64}"
+        except Exception as e:
+            st.error("Kunde inte läsa dinosauriebilden! Kontrollera att 'dinosaur.png' finns i samma mapp.")
+            dinosaur_url = "https://via.placeholder.com/50"
+
+        # Visualisering: Ordens "toss" och dinosauriens gång över skärmen
         words = prompt.split()
         html_content = """
         <html>
@@ -145,10 +158,9 @@ else:
             top = random.randint(0, 200)
             left = random.randint(0, 200)
             color = "#%06x" % random.randint(0, 0xFFFFFF)
-            delay = i * 0.2  # Stagger animations
+            delay = i * 0.2  # stagger animations
             html_content += f'<span class="word" style="top:{top}px; left:{left}px; color:{color}; animation-delay:{delay}s;">{word}</span>\n'
 
-        dinosaur_url = "https://giphy.com/stickers/sleepinggiant-trex-sleeping-giant-media-giantglowup-J4reC3QtQeQNoVQM6U"
         html_content += f'<img class="dinosaur" src="{dinosaur_url}" style="top:80%%;" />'
         html_content += "</body></html>"
 
