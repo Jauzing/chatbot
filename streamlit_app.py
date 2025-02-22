@@ -148,7 +148,7 @@ else:
             delay = i * 0.2  # Stagger animations
             html_content += f'<span class="word" style="top:{top}px; left:{left}px; color:{color}; animation-delay:{delay}s;">{word}</span>\n'
 
-        dinosaur_url = "https://media.giphy.com/media/26BRzozg4TCBXv6QU/giphy.gif"
+        dinosaur_url = "https://giphy.com/stickers/sleepinggiant-trex-sleeping-giant-media-giantglowup-J4reC3QtQeQNoVQM6U"
         html_content += f'<img class="dinosaur" src="{dinosaur_url}" style="top:80%%;" />'
         html_content += "</body></html>"
 
