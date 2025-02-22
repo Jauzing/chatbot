@@ -102,7 +102,7 @@ else:
 
         # Läs in den lokala dinosauriebilden (se till att filen "dinosaur.png" finns i samma katalog)
         try:
-            with open("dinosaur.png", "rb") as img_file:
+            with open("giphy.gif", "rb") as img_file:
                 dino_bytes = img_file.read()
             dino_b64 = base64.b64encode(dino_bytes).decode("utf-8")
             # Justera MIME-typen om det är en annan filtyp, t.ex. image/gif för .gif
