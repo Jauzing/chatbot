@@ -100,16 +100,6 @@ else:
         with st.chat_message("user", avatar=avatar_user):
             st.markdown(prompt)
 
-        # Läs in den lokala dinosauriebilden (se till att filen "dinosaur.png" finns i samma katalog)
-        try:
-            with open("giphy.gif", "rb") as img_file:
-                dino_bytes = img_file.read()
-            dino_b64 = base64.b64encode(dino_bytes).decode("utf-8")
-            # Justera MIME-typen om det är en annan filtyp, t.ex. image/gif för .gif
-            dinosaur_url = f"data:image/png;base64,{dino_b64}"
-        except Exception as e:
-            st.error("Kunde inte läsa dinosauriebilden! Kontrollera att 'dinosaur.png' finns i samma mapp.")
-            dinosaur_url = "https://via.placeholder.com/50"
 
         # Visualisering: Ordens "toss" och dinosauriens gång över skärmen
         words = prompt.split()
