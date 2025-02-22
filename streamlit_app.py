@@ -161,7 +161,6 @@ else:
             delay = i * 0.2  # stagger animations
             html_content += f'<span class="word" style="top:{top}px; left:{left}px; color:{color}; animation-delay:{delay}s;">{word}</span>\n'
 
-        html_content += f'<img class="dinosaur" src="{dinosaur_url}" style="top:80%%;" />'
         html_content += "</body></html>"
 
         components.html(html_content, height=500)
