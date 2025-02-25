@@ -7,8 +7,8 @@ import requests
 
 # 🚀 Title and Description
 st.set_page_config(page_title="Fredrik News Network", layout="wide")
-st.title("📰 Fredrik News Network (FNN)")
-st.write("Bringing you breaking news about Fredrik, 24/7.")
+st.title("📰 BIGRED News Network (BNN)")
+st.write("Bringing you swell news about Fredrik, all day err' day.")
 
 # OpenAI API Key
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
@@ -30,15 +30,15 @@ def generate_headline():
 # 🏆 Fake News Articles
 def generate_article():
     prompts = [
-        "Write a funny fake news article about Fredrik discovering a secret government conspiracy in his sock drawer.",
-        "Create a hilarious news report about Fredrik accidentally buying 10,000 rubber ducks online.",
-        "Generate a satirical article about Fredrik being elected mayor due to a typo in the voting system.",
+        "Write a funny fake news article about Fredrik being announced as the second most fast leveler in World of warcraft",
+        "Create a hilarious news report about a secret agent finding  10,000 bottles of baby oil in Fredriks closet.",
+        "Generate a satirical article about riots in Sweden because of Fredrik having too much luck on his rolls in wow",
     ]
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system",
-                   "content": "You are a satirical news writer. Make it funny, but keep it in a real news format."},
+                   "content": "You are a satirical news writer. Roast Fredrik and dont hold back. Keep it in a real news format."},
                   {"role": "user", "content": random.choice(prompts)}]
     )
     return response.choices[0].message.content if response.choices else "Error generating article."
@@ -47,9 +47,9 @@ def generate_article():
 # 🎨 Fake Sponsored Ads
 def get_fake_ad():
     ads = [
-        "📢 **Try Fredrik's Masterclass on Procrastination!** - *Sign up later, or maybe never.*",
-        "🍕 **Fredrik’s Pizza Delivery Service** - *We bring you pizza, eventually.*",
-        "📺 **Fredrik TV: All Fredrik, All the Time** - *Now streaming 24/7!*",
+        "📢 **Try BigRedFred's Leveling Guide!** - *Sign up later, or get clapped*",
+        "🍕 **Fredrik’s Pizza Delivery Service** - *We bring you pizza from Rimini.*",
+        "📺 **Fredrik TV: All Mobgrinding, All the Time** - *Now streaming @ Behind Dalkiosken!*",
     ]
     return random.choice(ads)
 
@@ -76,4 +76,4 @@ if st.button("🔄 Refresh News"):
 
 # 🏁 Footer
 st.markdown("---")
-st.write("© 2025 Fredrik News Network. All Rights Absurd.")
+st.write("© 2025 BIGRED News Network. All Rights Absurd Din Lille Turd.")
