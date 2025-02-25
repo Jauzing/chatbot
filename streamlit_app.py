@@ -55,7 +55,7 @@ def get_fake_ad():
 
 
 # 🎭 News Ticker at the Top
-st.markdown(f"<h2 style='color: red;'>BREAKING: {generate_headline()}</h2>", unsafe_allow_html=True)
+st.markdown(f"<h2 style='color: white;'>BREAKING: {generate_headline()}</h2>", unsafe_allow_html=True)
 
 # 📰 Generate News Content
 col1, col2 = st.columns([2, 1])
