@@ -36,7 +36,7 @@ def generate_article():
     ]
 
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o-mini",
         messages=[{"role": "system",
                    "content": "You are a satirical news writer. Roast Fredrik and dont hold back. Keep it in a real news format."},
                   {"role": "user", "content": random.choice(prompts)}]
