@@ -81,8 +81,8 @@ def load_or_generate_news():
         "Write a funny fake news article about Fredrik being announced as the second most fast leveler in World of Warcraft.",
         "Create a hilarious news report about a secret agent finding 10,000 bottles of baby oil in Fredrik's closet.",
         "Generate a satirical article about riots in Sweden because of Fredrik having too much luck on his rolls in WoW.",
-        "Write a satirical piece about Fredrik being mistaken for a celebrity and getting mobbed in a supermarket.",
-        "Generate a comically absurd story about Fredrik trying to smuggle a pet moose into a gaming convention."
+        "Write a satirical piece about Fredrik not being able to drift in Flatout 2 the racing game.",
+        "Generate a comically absurd story about Fredrik throwing water baloons on Aveliners house."
     ]
 
     # Select 3-5 random articles
