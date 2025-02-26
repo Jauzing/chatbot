@@ -48,7 +48,7 @@ def generate_article_and_image(prompt):
     dalle_response = client.images.generate(
         model="dall-e-3",
         prompt=f"A hilarious satirical news image illustrating: {prompt}. Keep in mind Fredrik has the following characteristics: Swedish, Ginger/Red hair, tall, bald, beard, likes hiphop and usually wears a hoodie with jeans and headphones..",
-        size="1024x1024"
+        size="800x600"
     )
 
     image_url = dalle_response.data[0].url if dalle_response else None
