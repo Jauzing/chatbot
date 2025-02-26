@@ -47,7 +47,7 @@ def generate_article_and_image(prompt):
     # 🎨 Generate an image for the article
     dalle_response = client.images.generate(
         model="dall-e-3",
-        prompt=f"A hilarious satirical news image illustrating: {prompt}",
+        prompt=f"A hilarious satirical news image illustrating: {prompt}. Keep in mind Fredrik has the following characteristics: Swedish, Ginger/Red hair, tall, bald, beard, likes hiphop and wears loose streetstyle clothing.",
         size="1024x1024"
     )
 
