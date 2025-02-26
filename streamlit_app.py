@@ -135,7 +135,7 @@ with col1:
         with st.container():
             st.subheader(f"🔹 Story {i + 1}")
             if image_url:
-                st.image(image_url, use_column_width=True)
+                st.image(image_url, use_container_width=True)
             st.write(article)
 
     st.header("📢 Other News")
