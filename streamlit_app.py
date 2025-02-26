@@ -38,7 +38,7 @@ def generate_article_and_image(prompt):
         model="gpt-4o-mini",
         messages=[
             {"role": "system",
-             "content": "You are a satirical news writer. Roast Fredrik and don't hold back. Keep it in a real news format."},
+             "content": "You are a satirical news writer. Roast Fredrik and don't hold back. Only use his first name. Keep it in a real news format."},
             {"role": "user", "content": prompt}
         ]
     )
@@ -47,7 +47,7 @@ def generate_article_and_image(prompt):
     # 🎨 Generate an image for the article
     dalle_response = client.images.generate(
         model="dall-e-3",
-        prompt=f"A hilarious satirical news image illustrating: {prompt}. Keep in mind Fredrik has the following characteristics: Swedish, Ginger/Red hair, tall, bald, beard, likes hiphop and wears loose streetstyle clothing.",
+        prompt=f"A hilarious satirical news image illustrating: {prompt}. Keep in mind Fredrik has the following characteristics: Swedish, Ginger/Red hair, tall, bald, beard, likes hiphop and usually wears a hoodie with jeans and headphones..",
         size="1024x1024"
     )
 
