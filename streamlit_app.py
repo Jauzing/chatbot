@@ -23,11 +23,11 @@ CACHE_EXPIRY_HOURS = 5  # Refresh news every 5 hours
 # 📰 Fake Breaking News Headlines
 def generate_headline():
     headlines = [
-        "Fredrik Accidentally Invents Time Travel but Only Goes Back 7 Minutes",
-        "Study Shows 98% of Fredriks Have No Idea What's Happening Right Now",
-        "Fredrik Declares Himself 'Supreme Overlord' of His Apartment",
-        "Local Authorities Confused After Every Street in Town Renamed to 'Fredrik Road'",
-        "Breaking: Fredrik Discovers New Species of Fish Inside His Own Fridge",
+        "Fredrik Accidentally Invents a way to play wow while sleeping",
+        "Study Shows 98% of Fredriks brain filled with fog",
+        "Fredrik Declares Himself 'Supreme Overlord' of Dalkiosken",
+        "Local Authorities Confused After Fredrik found  a way into the evidence room",
+        "Breaking: Fredrik Discovers New Species of roach behind dalkiosken",
     ]
     return random.choice(headlines)
 
