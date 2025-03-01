@@ -77,7 +77,7 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     # Query Qdrant using query_points with the correct parameter name
     query_result = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
-        vector=query_embedding,  # use "vector" instead of "query_vector"
+        query=query_embedding,  # pass the embedding as 'query'
         limit=top_k
     )
 
