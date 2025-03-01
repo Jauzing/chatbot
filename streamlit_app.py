@@ -71,23 +71,28 @@ def store_journal_entry(user_id, text):
 
 # 4. Retrieve top-k relevant entries from Qdrant
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
-    # Embed the query text
+    # 1. Embed the query text
     query_embedding = embed_text(query_text)
 
-    # Query Qdrant using query_points
-    query_results = qdrant_client.query_points(
+    # 2. Query Qdrant
+    query_result = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
-        limit=top_k
+        limit=top_k,
+        with_payload=True,    # Make sure to request the payload
+        with_vectors=False    # Skip returning vectors if you don't need them
     )
 
-    # Each item in query_results is (record, score)
+    # 3. Extract and return the text from the payloads
+    # query_result is usually a dictionary with a key "points" -> list of point dicts
     top_entries = []
-    for record, score in query_results:
-        text_content = record.payload["text"]
+    for point in query_result["points"]:
+        text_content = point["payload"]["text"]
         top_entries.append(text_content)
 
     return top_entries
+
+
 # 5. Function to get GPT’s answer, given top entries
 def get_gpt_response(question, relevant_texts):
     # Combine relevant texts into a single context
