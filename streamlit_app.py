@@ -12,9 +12,7 @@ client = OpenAI()
 # Initialize Qdrant client
 QDRANT_URL = "https://67bd4e7c-9e18-4183-8655-cb368b598d90.europe-west3-0.gcp.cloud.qdrant.io"
 
-QDRANT_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.7ahg6L6BZkeg61oz_WJdKwFCUNkADSabHdDIPQKFkac"
-
-# QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
+QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
 
 qdrant_client = QdrantClient(
     url=QDRANT_URL,
