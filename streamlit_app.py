@@ -172,10 +172,13 @@ def main():
 
         return
 
-
-
-
     st.subheader("Add a New Journal Entry")
+
+    # Create a text area with a unique session state key (e.g., "entry_input")
+    new_entry_text = st.text_area(
+        "What's on your mind today?",
+        key="entry_input"
+    )
 
     weather_input = st.text_input("What's the weather like today? (Optional)")
     mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
@@ -184,7 +187,7 @@ def main():
         if st.session_state.entry_input.strip():
             store_journal_entry(
                 user_id=st.session_state.user_id,
-                text=st.session_state.entry_input,
+                text=new_entry_text,
                 weather=weather_input,
                 mood=mood_input
             )
