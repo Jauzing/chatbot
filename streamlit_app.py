@@ -75,19 +75,19 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     query_embedding = embed_text(query_text)
 
     # 2. Query Qdrant
-    query_result = qdrant_client.query_points(
+    response = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
         limit=top_k,
-        with_payload=True,    # Make sure to request the payload
-        with_vectors=False    # Skip returning vectors if you don't need them
+        with_payload=True,
+        with_vectors=False
     )
 
-    # 3. Extract and return the text from the payloads
-    # query_result is usually a dictionary with a key "points" -> list of point dicts
+    # 3. Extract and return text from the payloads.
+    # 'response' is a QueryResponse object; use response.points to get a list of records.
     top_entries = []
-    for point in query_result["points"]:
-        text_content = point["payload"]["text"]
+    for point in response.points:
+        text_content = point.payload["text"]
         top_entries.append(text_content)
 
     return top_entries
