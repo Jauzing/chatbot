@@ -76,8 +76,14 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     )
     top_entries = []
     for point in response.points:
-        text_content = point.payload["text"]
-        top_entries.append(text_content)
+        payload = point.payload
+        entry_str = (
+            f"Text: {payload.get('text', 'N/A')}\n"
+            f"Timestamp: {payload.get('timestamp', 'N/A')}\n"
+            f"Weather: {payload.get('weather', 'N/A')}\n"
+            f"Mood: {payload.get('mood', 'N/A')}"
+        )
+        top_entries.append(entry_str)
     return top_entries
 
 def get_gpt_response(question, relevant_texts):
