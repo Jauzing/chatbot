@@ -43,12 +43,12 @@ def init_qdrant_collection():
         st.write("Created a new collection in Qdrant.")
 
 # 2. Function to embed text using OpenAI
-def embed_text(text):
+def embed_text(text: str) -> list[float]:
     response = openai.Embedding.create(
         input=text,
-        model="text-embedding-3-small"  # or whichever embedding model you prefer
+        model="text-embedding-3-small"  # or "text-embedding-3-large" if you prefer
     )
-    embedding = response["data"][0]["embedding"]
+    embedding = response.data[0].embedding
     return embedding
 
 # 3. Store a journal entry in Qdrant
