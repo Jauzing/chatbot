@@ -20,11 +20,9 @@ qdrant_client = QdrantClient(
 
 COLLECTION_NAME = "journal_entries"
 
-
 def init_qdrant_collection():
     vector_size = 1536  # matches "text-embedding-3-small"
     try:
-        # Get list of collections
         collections_info = qdrant_client.get_collections()
         collection_names = [col.name for col in collections_info.collections]
     except Exception as e:
@@ -40,14 +38,12 @@ def init_qdrant_collection():
         )
         st.write("Created a new collection in Qdrant.")
 
-
 def embed_text(text: str) -> list[float]:
     response = client.embeddings.create(
         input=text,
         model="text-embedding-3-small"
     )
     return response.data[0].embedding
-
 
 def store_journal_entry(user_id, text, weather=None, mood=None):
     embedding = embed_text(text)
@@ -69,7 +65,6 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
         ]
     )
 
-
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
     query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
@@ -84,7 +79,6 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         text_content = point.payload["text"]
         top_entries.append(text_content)
     return top_entries
-
 
 def get_gpt_response(question, relevant_texts):
     context_str = "\n\n".join(relevant_texts)
@@ -117,7 +111,6 @@ Answer the user's question or request below, combining emotional warmth with cle
     )
     return response.choices[0].message.content
 
-
 def main():
     st.title("Journalai 👱‍♀️📓")
 
@@ -139,14 +132,22 @@ def main():
                 st.session_state.logged_in = True
                 st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
-                st.experimental_rerun()  # Rerun to clear the login inputs
             else:
                 st.error("Invalid credentials")
         return
 
     st.subheader("Add a New Journal Entry")
-    # Text area for journal entry (no fixed key; value resets on rerun)
-    user_text = st.text_area("What's on your mind today?", value="", placeholder="Write your thoughts here...")
+
+    # Use a dynamic key for the text area so that we can force re-creation
+    if "text_area_counter" not in st.session_state:
+        st.session_state.text_area_counter = 0
+
+    user_text = st.text_area(
+        "What's on your mind today?",
+        key=f"entry_input_{st.session_state.text_area_counter}",
+        value="",
+        placeholder="Write your thoughts here..."
+    )
     weather_input = st.text_input("What's the weather like today? (Optional)")
     mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
 
@@ -160,7 +161,8 @@ def main():
                 mood=mood_input
             )
             st.success("Entry saved!")
-            st.experimental_rerun()  # Force a rerun to clear the text area
+            # Increment the counter so that the text area is re-created empty
+            st.session_state.text_area_counter += 1
         else:
             st.warning("Please write something before saving.")
 
@@ -176,7 +178,6 @@ def main():
             st.write(answer)
         else:
             st.warning("Please ask a question.")
-
 
 if __name__ == "__main__":
     main()
