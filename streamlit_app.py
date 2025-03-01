@@ -20,6 +20,7 @@ qdrant_client = QdrantClient(
 
 COLLECTION_NAME = "journal_entries"
 
+
 def init_qdrant_collection():
     vector_size = 1536  # matches "text-embedding-3-small"
     try:
@@ -38,12 +39,14 @@ def init_qdrant_collection():
         )
         st.write("Created a new collection in Qdrant.")
 
+
 def embed_text(text: str) -> list[float]:
     response = client.embeddings.create(
         input=text,
         model="text-embedding-3-small"
     )
     return response.data[0].embedding
+
 
 def store_journal_entry(user_id, text, weather=None, mood=None):
     embedding = embed_text(text)
@@ -65,6 +68,7 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
         ]
     )
 
+
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
     query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
@@ -85,6 +89,7 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         )
         top_entries.append(entry_str)
     return top_entries
+
 
 def get_gpt_response(question, relevant_texts):
     context_str = "\n\n".join(relevant_texts)
@@ -117,9 +122,9 @@ Answer the user's question or request below, combining emotional warmth with cle
     )
     return response.choices[0].message.content
 
+
 def main():
     st.title("Journalai 👱‍♀️📓")
-
     init_qdrant_collection()
 
     if "logged_in" not in st.session_state:
@@ -143,11 +148,8 @@ def main():
         return
 
     st.subheader("Add a New Journal Entry")
-
-    # Use a dynamic key for the text area so that we can force re-creation
     if "text_area_counter" not in st.session_state:
         st.session_state.text_area_counter = 0
-
     user_text = st.text_area(
         "What's on your mind today?",
         key=f"entry_input_{st.session_state.text_area_counter}",
@@ -167,23 +169,30 @@ def main():
                 mood=mood_input
             )
             st.success("Entry saved!")
-            # Increment the counter so that the text area is re-created empty
             st.session_state.text_area_counter += 1
         else:
             st.warning("Please write something before saving.")
 
     st.divider()
 
-    st.subheader("👱‍♀️")
+    st.subheader("👱‍♀️ Ask Joy")
     user_question = st.text_input("I know most things about you")
     if st.button("Ask"):
         if user_question.strip():
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
+
+            # Display the top-k retrieved entries for debugging/inspection.
+            with st.expander("Show Top K Retrieved Entries"):
+                for i, entry in enumerate(relevant, start=1):
+                    st.write(f"Entry {i}:")
+                    st.text(entry)
+
             answer = get_gpt_response(user_question, relevant)
-            st.write("**Answer from 👱‍♀️:**")
+            st.write("**Answer from Joy:**")
             st.write(answer)
         else:
             st.warning("Please ask a question.")
+
 
 if __name__ == "__main__":
     main()
