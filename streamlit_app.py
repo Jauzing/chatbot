@@ -74,21 +74,20 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     # Embed the query text
     query_embedding = embed_text(query_text)
 
-    # Query Qdrant using query_points with the correct parameter name
-    query_result = qdrant_client.query_points(
+    # Query Qdrant using query_points
+    query_results = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
-        query=query_embedding,  # pass the embedding as 'query'
+        query=query_embedding,
         limit=top_k
     )
 
-    # Extract and return the text from the payloads of the retrieved points
+    # Each item in query_results is (record, score)
     top_entries = []
-    for point in query_result:
-        text_content = point.payload["text"]
+    for record, score in query_results:
+        text_content = record.payload["text"]
         top_entries.append(text_content)
 
     return top_entries
-
 # 5. Function to get GPT’s answer, given top entries
 def get_gpt_response(question, relevant_texts):
     # Combine relevant texts into a single context
