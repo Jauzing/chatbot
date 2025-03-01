@@ -6,6 +6,7 @@ from qdrant_client.http import models as qdrant_models
 import uuid
 import datetime
 
+
 client = OpenAI()
 
 # Initialize Qdrant client
@@ -138,7 +139,7 @@ def main():
                 st.session_state.logged_in = True
                 st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
-                st.experimental_rerun()  # Re-run to clear the UI
+                raise RerunException(RerunData())  # Re-run to clear the UI
             else:
                 st.error("Invalid credentials")
         return
@@ -162,7 +163,7 @@ def main():
             )
             st.success("Entry saved!")
             # Force a re-run so the text area is cleared
-            st.experimental_rerun()
+            raise RerunException(RerunData())
         else:
             st.warning("Please write something before saving.")
 
