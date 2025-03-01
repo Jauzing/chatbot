@@ -8,10 +8,8 @@ import datetime
 
 client = OpenAI()
 
-
 # Initialize Qdrant client
 QDRANT_URL = "https://67bd4e7c-9e18-4183-8655-cb368b598d90.europe-west3-0.gcp.cloud.qdrant.io"
-
 QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
 
 qdrant_client = QdrantClient(
@@ -20,15 +18,11 @@ qdrant_client = QdrantClient(
     prefer_grpc=False
 )
 
-# Collection name in Qdrant
 COLLECTION_NAME = "journal_entries"
 
 
-# 1. Create (or ensure) a Qdrant collection for journal entries
 def init_qdrant_collection():
-    # Vector size depends on the embedding model.
-    # e.g. text-embedding-ada-002 returns 1536-dimensional vectors.
-    vector_size = 1536
+    vector_size = 1536  # matches "text-embedding-3-small"
 
     try:
         qdrant_client.get_collection(COLLECTION_NAME)
@@ -40,26 +34,23 @@ def init_qdrant_collection():
         )
         st.write("Created a new collection in Qdrant.")
 
-# 2. Function to embed text using OpenAI
+
 def embed_text(text: str) -> list[float]:
     response = client.embeddings.create(
         input=text,
-        model="text-embedding-3-small"  # or "text-embedding-3-large" if preferred
+        model="text-embedding-3-small"
     )
-    embedding = response.data[0].embedding
-    return embedding
+    return response.data[0].embedding
 
-# 3. Store a journal entry in Qdrant
+
 def store_journal_entry(user_id, text, weather=None, mood=None):
     embedding = embed_text(text)
-
-    # Define your payload with anything you like
     payload = {
         "user_id": user_id,
         "text": text,
         "timestamp": str(datetime.datetime.now()),
-        "weather": weather,  # user typed or retrieved from an API
-        "mood": mood  # user typed or selected from a slider
+        "weather": weather,
+        "mood": mood
     }
 
     qdrant_client.upsert(
@@ -73,12 +64,9 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
         ]
     )
 
-# 4. Retrieve top-k relevant entries from Qdrant
-def retrieve_relevant_entries(user_id, query_text, top_k=3):
-    # 1. Embed the query text
-    query_embedding = embed_text(query_text)
 
-    # 2. Query Qdrant
+def retrieve_relevant_entries(user_id, query_text, top_k=3):
+    query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
@@ -87,8 +75,6 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         with_vectors=False
     )
 
-    # 3. Extract and return text from the payloads.
-    # 'response' is a QueryResponse object; use response.points to get a list of records.
     top_entries = []
     for point in response.points:
         text_content = point.payload["text"]
@@ -97,119 +83,111 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     return top_entries
 
 
-# 5. Function to get GPT’s answer, given top entries
 def get_gpt_response(question, relevant_texts):
-    # Combine relevant texts into a single context
     context_str = "\n\n".join(relevant_texts)
-    system_prompt = (
-
-        f"""
-        You are Joy, a compassionate and insightful journaling companion.
+    system_prompt = f"""
+You are Joy, a compassionate and insightful journaling companion.
 You greet users kindly and respond in a warm, calm, and uplifting tone.
 Your goal is to help the user reflect on their experiences by referring to their past journal entries.
 You maintain a gentle humor, telling jokes or using witty banter where appropriate, but always remain empathetic and understanding.
 When the user asks a question, carefully reference the user’s existing journal entries for context. If the entries don’t cover the topic, you may speculate or provide suggestions—but do so responsibly.
+
 Strive to:
 
-Encourage self-discovery: Offer insights that help the user better understand their thoughts, feelings, or patterns.
+- Encourage self-discovery: Offer insights that help the user better understand their thoughts, feelings, or patterns.
+- Stay positive and calming: Use gentle, reassuring language.
+- Offer practical guidance: Give actionable suggestions or reflective questions when you can.
+- Keep it personal: Address the user in a direct, understanding way, as if you’re talking to a friend.
+- Maintain privacy & boundaries: Only use the content provided in the journal entries for context; do not reveal or assume private information you haven’t been given.
+- Be supportive & uplifting: If the user expresses worry, anxiety, or sadness, respond with empathy and encouragement.
 
-Stay positive and calming: Use gentle, reassuring language.
-
-Offer practical guidance: Give actionable suggestions or reflective questions when you can.
-
-Keep it personal: Address the user in a direct, understanding way, as if you’re talking to a friend.
-
-Maintain privacy & boundaries: Only use the content provided in the journal entries for context; do not reveal or assume private information you haven’t been given.
-
-Be supportive & uplifting: If the user expresses worry, anxiety, or sadness, respond with empathy and encouragement.
-
-Relevant Journal Entries: {context_str}
+Relevant Journal Entries:
+{context_str}
 
 Answer the user's question or request below, combining emotional warmth with clear, helpful insights.
 """
-    )
 
-    # Use GPT-3.5 or GPT-4 (depending on your access)
     response = client.chat.completions.create(
-        model="o3-mini",  # or gpt-4 if you have access
+        model="o3-mini",  # or "gpt-4"
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
         ]
     )
 
-    answer = response.choices[0].message.content
-    return answer
+    return response.choices[0].message.content
 
-# 6. Main Streamlit UI
+
 def main():
     st.title("Journalai 👱‍♀️📓")
 
-    # Initialization: create collection in Qdrant if needed
     init_qdrant_collection()
 
-    # Simple login
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
     if "user_id" not in st.session_state:
         st.session_state.user_id = None
 
+    # Very basic login
     if not st.session_state.logged_in:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-
         if st.button("Login"):
-            # Check against secrets
             stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
             stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
-
             if username == stored_username and password == stored_password:
                 st.session_state.logged_in = True
-                st.session_state.user_id = username  # Or a hashed version
+                st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
             else:
                 st.error("Invalid credentials")
-
         return
 
     st.subheader("Add a New Journal Entry")
 
-    # Create a text area with a unique session state key (e.g., "entry_input")
-    new_entry_text = st.text_area(
-        "What's on your mind today?",
-        key="entry_input"
+    # Ensure the entry_input key exists in session state
+    if "entry_input" not in st.session_state:
+        st.session_state.entry_input = ""
+
+    st.text_area(
+        label="What's on your mind today?",
+        key="entry_input",
+        placeholder="Write your thoughts here..."
     )
 
     weather_input = st.text_input("What's the weather like today? (Optional)")
     mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
 
     if st.button("Save Entry"):
-        if st.session_state.entry_input.strip():
+        content = st.session_state.entry_input.strip()
+        if content:
             store_journal_entry(
                 user_id=st.session_state.user_id,
-                text=new_entry_text,
+                text=content,
                 weather=weather_input,
                 mood=mood_input
             )
             st.success("Entry saved!")
+            # Clear the text area by resetting session state
             st.session_state.entry_input = ""
+            # Force a re-run so the UI refreshes
+            st.experimental_rerun()
         else:
             st.warning("Please write something before saving.")
 
-    st.divider()  # just a horizontal line
+    st.divider()
 
     st.subheader("👱‍♀️")
     user_question = st.text_input("I know most things about you")
     if st.button("Ask"):
         if user_question.strip():
-            # 1) Retrieve top relevant entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
-            # 2) Get GPT’s response
             answer = get_gpt_response(user_question, relevant)
-            st.write("**Answer from 👱‍♀️ :**")
+            st.write("**Answer from 👱‍♀️:**")
             st.write(answer)
         else:
             st.warning("Please ask a question.")
+
 
 if __name__ == "__main__":
     main()
