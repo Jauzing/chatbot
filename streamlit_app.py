@@ -81,11 +81,16 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     top_entries = []
     for point in response.points:
         payload = point.payload
+        # Try to get title, creator, date, content; fallback to alternative keys if needed.
+        title   = payload.get("title") or payload.get("text", "N/A")
+        creator = payload.get("creator", "N/A")
+        date    = payload.get("post_date") or payload.get("timestamp", "N/A")
+        content = payload.get("content", "N/A")
         entry_str = (
-            f"Text: {payload.get('text', 'N/A')}\n"
-            f"Timestamp: {payload.get('timestamp', 'N/A')}\n"
-            f"Weather: {payload.get('weather', 'N/A')}\n"
-            f"Mood: {payload.get('mood', 'N/A')}"
+            f"Title: {title}\n"
+            f"Creator: {creator}\n"
+            f"Date: {date}\n"
+            f"Content: {content}"
         )
         top_entries.append(entry_str)
     return top_entries
