@@ -5,8 +5,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 import uuid
 import datetime
-from streamlit.scriptrunner import RerunException
-from streamlit.scriptrunner.script_requests import RerunData
 
 
 client = OpenAI()
@@ -141,7 +139,7 @@ def main():
                 st.session_state.logged_in = True
                 st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
-                raise RerunException(RerunData())  # Re-run to clear the UI
+                st.experimental_rerun()  # Re-run to clear the UI
             else:
                 st.error("Invalid credentials")
         return
@@ -165,7 +163,7 @@ def main():
             )
             st.success("Entry saved!")
             # Force a re-run so the text area is cleared
-            raise RerunException(RerunData())
+            st.experimental_rerun()
         else:
             st.warning("Please write something before saving.")
 
