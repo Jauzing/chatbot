@@ -112,8 +112,7 @@ def get_gpt_response(question, relevant_texts):
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
-        ],
-        temperature=0.7
+        ]
     )
 
     answer = response["choices"][0]["message"]["content"]
