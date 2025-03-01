@@ -115,7 +115,7 @@ def get_gpt_response(question, relevant_texts):
         ]
     )
 
-    answer = response["choices"][0]["message"]["content"]
+    answer = response.choices[0].message.content
     return answer
 
 # 6. Main Streamlit UI
