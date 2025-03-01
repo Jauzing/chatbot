@@ -1,13 +1,13 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 import uuid
 import datetime
 
-# Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")  # or st.secrets["OPENAI_API_KEY"]
+client = OpenAI()
+
 
 # Initialize Qdrant client
 QDRANT_URL = "https://67bd4e7c-9e18-4183-8655-cb368b598d90.europe-west3-0.gcp.cloud.qdrant.io"
@@ -44,9 +44,9 @@ def init_qdrant_collection():
 
 # 2. Function to embed text using OpenAI
 def embed_text(text: str) -> list[float]:
-    response = openai.Embedding.create(
+    response = client.embeddings.create(
         input=text,
-        model="text-embedding-3-small"  # or "text-embedding-3-large" if you prefer
+        model="text-embedding-3-small"  # or "text-embedding-3-large" if preferred
     )
     embedding = response.data[0].embedding
     return embedding
@@ -106,7 +106,7 @@ def get_gpt_response(question, relevant_texts):
     )
 
     # Use GPT-3.5 or GPT-4 (depending on your access)
-    response = openai.ChatCompletion.create(
+    response = client.ChatCompletion.create(
         model="gpt-3.5-turbo",  # or gpt-4 if you have access
         messages=[
             {"role": "system", "content": system_prompt},
