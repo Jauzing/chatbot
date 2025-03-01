@@ -50,21 +50,25 @@ def embed_text(text: str) -> list[float]:
     return embedding
 
 # 3. Store a journal entry in Qdrant
-def store_journal_entry(user_id, text):
+def store_journal_entry(user_id, text, weather=None, mood=None):
     embedding = embed_text(text)
 
-    # upsert into Qdrant
+    # Define your payload with anything you like
+    payload = {
+        "user_id": user_id,
+        "text": text,
+        "timestamp": str(datetime.datetime.now()),
+        "weather": weather,  # user typed or retrieved from an API
+        "mood": mood  # user typed or selected from a slider
+    }
+
     qdrant_client.upsert(
         collection_name=COLLECTION_NAME,
         points=[
             qdrant_models.PointStruct(
                 id=str(uuid.uuid4()),
                 vector=embedding,
-                payload={
-                    "user_id": user_id,
-                    "text": text,
-                    "timestamp": str(datetime.datetime.now())
-                }
+                payload=payload
             )
         ]
     )
@@ -168,12 +172,24 @@ def main():
 
         return
 
+
+
+
     st.subheader("Add a New Journal Entry")
-    new_entry_text = st.text_area("What's on your mind today?")
+
+    weather_input = st.text_input("What's the weather like today? (Optional)")
+    mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
+
     if st.button("Save Entry"):
-        if new_entry_text.strip():
-            store_journal_entry(st.session_state.user_id, new_entry_text)
+        if st.session_state.entry_input.strip():
+            store_journal_entry(
+                user_id=st.session_state.user_id,
+                text=st.session_state.entry_input,
+                weather=weather_input,
+                mood=mood_input
+            )
             st.success("Entry saved!")
+            st.session_state.entry_input = ""
         else:
             st.warning("Please write something before saving.")
 
