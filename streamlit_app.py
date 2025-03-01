@@ -156,7 +156,6 @@ def main():
     )
 
     weather_input = st.text_input("What's the weather like today? (Optional)")
-    mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
 
     if st.button("Save Entry"):
         content = st.session_state.entry_input.strip()
@@ -165,7 +164,6 @@ def main():
                 user_id=st.session_state.user_id,
                 text=content,
                 weather=weather_input,
-                mood=mood_input
             )
             st.success("Entry saved!")
             # Clear the text area by resetting session state
