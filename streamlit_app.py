@@ -32,7 +32,7 @@ def init_qdrant_collection():
 
     try:
         qdrant_client.get_collection(COLLECTION_NAME)
-        st.write("Collection already exists.")
+        st.write("I read your journal already 💌")
     except:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
@@ -120,7 +120,7 @@ def get_gpt_response(question, relevant_texts):
 
 # 6. Main Streamlit UI
 def main():
-    st.title("My Simple Journal App")
+    st.title("Journalai 👱‍♀️📓")
 
     # Initialization: create collection in Qdrant if needed
     init_qdrant_collection()
@@ -156,15 +156,15 @@ def main():
 
     st.divider()  # just a horizontal line
 
-    st.subheader("Ask GPT About Your Journal")
-    user_question = st.text_input("Ask a question about your journal entries")
-    if st.button("Get Answer"):
+    st.subheader("👱‍♀️")
+    user_question = st.text_input("I know most things about you")
+    if st.button("Ask"):
         if user_question.strip():
             # 1) Retrieve top relevant entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
             # 2) Get GPT’s response
             answer = get_gpt_response(user_question, relevant)
-            st.write("**Answer from GPT:**")
+            st.write("**Answer from 👱‍♀️ :**")
             st.write(answer)
         else:
             st.warning("Please ask a question.")
