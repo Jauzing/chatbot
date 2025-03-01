@@ -6,7 +6,6 @@ from qdrant_client.http import models as qdrant_models
 import uuid
 import datetime
 
-
 client = OpenAI()
 
 # Initialize Qdrant client
@@ -23,11 +22,18 @@ COLLECTION_NAME = "journal_entries"
 
 
 def init_qdrant_collection():
-    vector_size = 1536  # "text-embedding-3-small"
+    vector_size = 1536  # matches "text-embedding-3-small"
     try:
-        qdrant_client.get_collection(COLLECTION_NAME)
+        # Get list of collections
+        collections_info = qdrant_client.get_collections()
+        collection_names = [col.name for col in collections_info.collections]
+    except Exception as e:
+        st.error(f"Error fetching collections: {e}")
+        collection_names = []
+
+    if COLLECTION_NAME in collection_names:
         st.write("I read your journal already 💌")
-    except:
+    else:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=qdrant_models.VectorParams(size=vector_size, distance="Cosine")
@@ -52,7 +58,6 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
         "weather": weather,
         "mood": mood
     }
-
     qdrant_client.upsert(
         collection_name=COLLECTION_NAME,
         points=[
@@ -74,12 +79,10 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         with_payload=True,
         with_vectors=False
     )
-
     top_entries = []
     for point in response.points:
         text_content = point.payload["text"]
         top_entries.append(text_content)
-
     return top_entries
 
 
@@ -93,7 +96,6 @@ You maintain a gentle humor, telling jokes or using witty banter where appropria
 When the user asks a question, carefully reference the user’s existing journal entries for context. If the entries don’t cover the topic, you may speculate or provide suggestions—but do so responsibly.
 
 Strive to:
-
 - Encourage self-discovery: Offer insights that help the user better understand their thoughts, feelings, or patterns.
 - Stay positive and calming: Use gentle, reassuring language.
 - Offer practical guidance: Give actionable suggestions or reflective questions when you can.
@@ -106,15 +108,13 @@ Relevant Journal Entries:
 
 Answer the user's question or request below, combining emotional warmth with clear, helpful insights.
 """
-
     response = client.chat.completions.create(
-        model="o3-mini",  # or "gpt-4"
+        model="o3-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
         ]
     )
-
     return response.choices[0].message.content
 
 
@@ -139,16 +139,14 @@ def main():
                 st.session_state.logged_in = True
                 st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
-                st.experimental_rerun()  # Re-run to clear the UI
+                st.experimental_rerun()  # Rerun to clear the login inputs
             else:
                 st.error("Invalid credentials")
         return
 
     st.subheader("Add a New Journal Entry")
-
-    # No custom key => text is ephemeral each time the script runs
+    # Text area for journal entry (no fixed key; value resets on rerun)
     user_text = st.text_area("What's on your mind today?", value="", placeholder="Write your thoughts here...")
-
     weather_input = st.text_input("What's the weather like today? (Optional)")
     mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
 
@@ -162,8 +160,7 @@ def main():
                 mood=mood_input
             )
             st.success("Entry saved!")
-            # Force a re-run so the text area is cleared
-            st.experimental_rerun()
+            st.experimental_rerun()  # Force a rerun to clear the text area
         else:
             st.warning("Please write something before saving.")
 
