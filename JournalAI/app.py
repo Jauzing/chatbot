@@ -11,10 +11,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")  # or st.secrets["OPENAI_API_KEY"]
 
 # Initialize Qdrant client
 QDRANT_URL = "https://67bd4e7c-9e18-4183-8655-cb368b598d90.europe-west3-0.gcp.cloud.qdrant.io"
-
-QDRANT_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.7ahg6L6BZkeg61oz_WJdKwFCUNkADSabHdDIPQKFkac"
-
-# QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
+QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
 
 qdrant_client = QdrantClient(
     url=QDRANT_URL,
@@ -73,21 +70,25 @@ def store_journal_entry(user_id, text):
 
 # 4. Retrieve top-k relevant entries from Qdrant
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
-    # Embed the query text
+    # embed the query
     query_embedding = embed_text(query_text)
 
-    # Query Qdrant using query_points (with payload returned)
-    query_result = qdrant_client.query_points(
+    # search
+    search_result = qdrant_client.search(
         collection_name=COLLECTION_NAME,
         query_vector=query_embedding,
         limit=top_k,
-        with_payload=True
+        # optionally filter by user_id so each user only sees their own data
+        # You can do:
+        # filter=qdrant_models.Filter(
+        #     must=[qdrant_models.FieldCondition(key="user_id", match=qdrant_models.MatchValue(value=user_id))]
+        # )
     )
 
-    # Extract and return the text from the payloads of the retrieved points
+    # extract the text fields from the payloads
     top_entries = []
-    for point in query_result:
-        text_content = point.payload["text"]
+    for hit in search_result:
+        text_content = hit.payload["text"]
         top_entries.append(text_content)
 
     return top_entries
