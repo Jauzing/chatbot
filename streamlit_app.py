@@ -150,18 +150,22 @@ def main():
     if "user_id" not in st.session_state:
         st.session_state.user_id = None
 
-    # Login form
     if not st.session_state.logged_in:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
+
         if st.button("Login"):
-            # Super naive check - obviously not secure
-            if username and password:
+            # Check against secrets
+            stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
+            stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
+
+            if username == stored_username and password == stored_password:
                 st.session_state.logged_in = True
-                st.session_state.user_id = username  # or a hashed version
+                st.session_state.user_id = username  # Or a hashed version
                 st.success(f"Logged in as {username}")
             else:
                 st.error("Invalid credentials")
+
         return
 
     st.subheader("Add a New Journal Entry")
