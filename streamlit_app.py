@@ -76,12 +76,11 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     # Embed the query text
     query_embedding = embed_text(query_text)
 
-    # Query Qdrant using query_points (with payload returned)
+    # Query Qdrant using query_points (payloads are included by default)
     query_result = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query_vector=query_embedding,
-        limit=top_k,
-        with_payload=True
+        limit=top_k
     )
 
     # Extract and return the text from the payloads of the retrieved points
