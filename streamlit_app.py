@@ -22,8 +22,7 @@ COLLECTION_NAME = "journal_entries"
 
 
 def init_qdrant_collection():
-    vector_size = 1536  # matches "text-embedding-3-small"
-
+    vector_size = 1536  # "text-embedding-3-small"
     try:
         qdrant_client.get_collection(COLLECTION_NAME)
         st.write("I read your journal already 💌")
@@ -128,7 +127,7 @@ def main():
     if "user_id" not in st.session_state:
         st.session_state.user_id = None
 
-    # Very basic login
+    # Basic login
     if not st.session_state.logged_in:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -139,36 +138,30 @@ def main():
                 st.session_state.logged_in = True
                 st.session_state.user_id = username
                 st.success(f"Logged in as {username}")
+                st.experimental_rerun()  # Re-run to clear the UI
             else:
                 st.error("Invalid credentials")
         return
 
     st.subheader("Add a New Journal Entry")
 
-    # Ensure the entry_input key exists in session state
-    if "entry_input" not in st.session_state:
-        st.session_state.entry_input = ""
-
-    st.text_area(
-        label="What's on your mind today?",
-        key="entry_input",
-        placeholder="Write your thoughts here..."
-    )
+    # No custom key => text is ephemeral each time the script runs
+    user_text = st.text_area("What's on your mind today?", value="", placeholder="Write your thoughts here...")
 
     weather_input = st.text_input("What's the weather like today? (Optional)")
+    mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
 
     if st.button("Save Entry"):
-        content = st.session_state.entry_input.strip()
+        content = user_text.strip()
         if content:
             store_journal_entry(
                 user_id=st.session_state.user_id,
                 text=content,
                 weather=weather_input,
+                mood=mood_input
             )
             st.success("Entry saved!")
-            # Clear the text area by resetting session state
-            st.session_state.entry_input = ""
-            # Force a re-run so the UI refreshes
+            # Force a re-run so the text area is cleared
             st.experimental_rerun()
         else:
             st.warning("Please write something before saving.")
