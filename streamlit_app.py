@@ -107,8 +107,8 @@ def get_gpt_response(question, relevant_texts):
     )
 
     # Use GPT-3.5 or GPT-4 (depending on your access)
-    response = client.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # or gpt-4 if you have access
+    response = client.chat.completions.create(
+        model="o3-mini",  # or gpt-4 if you have access
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
