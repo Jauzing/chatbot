@@ -32,7 +32,7 @@ def init_qdrant_collection():
         collection_names = []
 
     if COLLECTION_NAME in collection_names:
-        st.write("I read your journal already 🥰")
+        st.write("I have your journal ready 🥰")
     else:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
@@ -102,7 +102,7 @@ def get_gpt_response(question, relevant_texts):
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
-        context_str = "I don't find anything about that in your Journal."
+        context_str = "I didn't find anything about that in your Journal."
 
     # Static instructions go into the system prompt.
     system_prompt = """
@@ -230,16 +230,9 @@ def main():
                 st.error("Invalid credentials")
         return
 
-    # -- Debugging Options (Dropdowns) --
-    with st.expander("Debugging Options"):
-        st.write("Additional debugging details or state information can be shown here.")
 
-    # -- Display for Top K Retrieved Journal Entries (Dropdown) --
-    with st.expander("Show Top K Retrieved Entries"):
-        st.write("This dropdown shows the top retrieved journal excerpts for inspection.")
 
     # -- Two BIG Output Boxes for Joy's Response --
-    st.subheader("Joy's Response")
     col_left, col_right = st.columns([3, 3])
 
     # User Input Field at the Bottom
@@ -251,6 +244,11 @@ def main():
             # Retrieve relevant journal entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
+            # -- Display the Top K Retrieved Journal Entries (Dropdown) --
+            with st.expander("Show Top K Retrieved Entries"):
+                st.write("📚 **Top K Retrieved Entries**")
+                st.write(relevant)
+
             # Get Joy's response from GPT
             answer = get_gpt_response(user_question, relevant)
 
@@ -259,11 +257,11 @@ def main():
 
             # Display the two parts in separate big output boxes
             with col_left:
-                st.markdown("### Journal Excerpts")
-                st.text_area("Journal Excerpts", value=journal_excerpts, height=800)
+                st.markdown("### 📓")
+                st.text_area("Journal pages", value=journal_excerpts, height=800)
             with col_right:
-                st.markdown("### Joy's Insights")
-                st.text_area("Joy's Insights", value=joy_insights, height=800)
+                st.markdown("### 👱‍♀️")
+                st.text_area("Joy's take", value=joy_insights, height=800)
         else:
             st.warning("Please ask a question.")
 
