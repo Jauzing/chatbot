@@ -144,11 +144,14 @@ Response Format:
         ]
     )
 
-    # Debugging information to check what's sent to the model
-    st.write("### **Debug Info** \n ")
-    st.write("**System Prompt:** \n", system_prompt)
-    st.write("**User Prompt:**\n ", question)
-    st.write("**Injected Journal Entries:** \n ", context_str)
+    # Display debugging information inside an expander
+    with st.expander("🔍 Debug Info (Click to Expand)"):
+        st.write("**System Prompt:**")
+        st.text(system_prompt)
+        st.write("**User Prompt:**")
+        st.text(question)
+        st.write("**Injected Journal Entries:**")
+        st.text(context_str)
 
     # Print to streamlit console
 
