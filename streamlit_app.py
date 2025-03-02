@@ -123,9 +123,9 @@ Response Format:
 
 ________
 
-📖 Journal Entry: **[Title]**
-🗓️ Date: **[Timestamp]** \n
-✍️ Content: \n
+📖 **[Title]**
+🗓️ **[Timestamp]** \n
+💌  Content: \n
 
 [Full journal entry exactly as written], 
 
