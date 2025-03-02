@@ -94,6 +94,8 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         )
         top_entries.append(entry_str)
     return top_entries
+
+
 def get_gpt_response(question, relevant_texts):
     # Format retrieved journal entries correctly
     if relevant_texts:
@@ -158,7 +160,7 @@ ________
         ]
     )
 
-    # Display debugging information inside an expander
+    # Display debugging information in an expander
     with st.expander("🔍 Debug Info (Click to Expand)"):
         st.write("**System Prompt:**")
         st.text(system_prompt)
@@ -169,15 +171,15 @@ ________
 
 
 def main():
-    st.title("Log.AI  ️📓")
+    st.title("Log.AI  📓")
     init_qdrant_collection()
 
+    # -- Basic Login --
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
     if "user_id" not in st.session_state:
         st.session_state.user_id = None
 
-    # Basic login
     if not st.session_state.logged_in:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -192,50 +194,45 @@ def main():
                 st.error("Invalid credentials")
         return
 
-    st.subheader("Add a New Journal Entry")
-    if "text_area_counter" not in st.session_state:
-        st.session_state.text_area_counter = 0
-    user_text = st.text_area(
-        "What's on your mind today?",
-        key=f"entry_input_{st.session_state.text_area_counter}",
-        value="",
-        placeholder="Write your thoughts here..."
-    )
-    weather_input = st.text_input("What's the weather like today? (Optional)")
-    mood_input = st.slider("How would you rate your mood today?", 1, 10, 5)
+    # -- Debugging Options (Always Visible) --
+    with st.expander("Debugging Options"):
+        st.write("Any additional debugging details or state information can be shown here.")
 
-    if st.button("Save Entry"):
-        content = user_text.strip()
-        if content:
-            store_journal_entry(
-                user_id=st.session_state.user_id,
-                text=content,
-                weather=weather_input,
-                mood=mood_input
-            )
-            st.success("Entry saved!")
-            st.session_state.text_area_counter += 1
-        else:
-            st.warning("Please write something before saving.")
+    # -- Output Areas: Two Side-by-Side Boxes --
+    col_left, col_right = st.columns(2)
 
+    with col_left:
+        st.subheader("Journal Entry Excerpts")
+        # This box will be populated after asking a question
+
+    with col_right:
+        st.subheader("Joy's Insights")
+        # This box will be populated with Joy's GPT response
+
+    # -- User Input Field (Positioned at the Bottom) --
     st.divider()
-
     st.subheader("👱‍♀️ Ask Joy")
     user_question = st.text_input("I know most things about you")
     if st.button("Ask"):
         if user_question.strip():
+            # Retrieve relevant journal entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
-            # Display the top-k retrieved entries for debugging/inspection.
-            with st.expander("Show Top K Retrieved Entries"):
-                for i, entry in enumerate(relevant, start=1):
-                    st.write(f"Entry {i}:")
-                    st.text(entry)
+            # Update the left column with the retrieved journal entry excerpts
+            with col_left:
+                st.write("Retrieved Journal Entries:")
+                if relevant:
+                    for i, entry in enumerate(relevant, start=1):
+                        st.write(f"Entry {i}:")
+                        st.text(entry)
+                else:
+                    st.write("I don't find anything about that in your Journal.")
 
-
-            answer = get_gpt_response(user_question, relevant)
-            st.write("**Answer from Joy:**")
-            st.write(answer)
+            # Get Joy's response and update the right column
+            with col_right:
+                answer = get_gpt_response(user_question, relevant)
+                st.write("Answer from Joy:")
+                st.write(answer)
         else:
             st.warning("Please ask a question.")
 
