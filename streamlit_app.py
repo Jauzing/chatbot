@@ -239,7 +239,7 @@ def main():
 
     # -- Two BIG Output Boxes for Joy's Response --
     st.subheader("Joy's Response")
-    col_left, col_right = st.columns(2)
+    col_left, col_right = st.columns([3, 3])
 
     # User Input Field at the Bottom
     st.divider()
@@ -259,10 +259,10 @@ def main():
             # Display the two parts in separate big output boxes
             with col_left:
                 st.markdown("### Journal Excerpts")
-                st.text_area("Journal Excerpts", value=journal_excerpts, height=800, width=600)
+                st.text_area("Journal Excerpts", value=journal_excerpts, height=800)
             with col_right:
                 st.markdown("### Joy's Insights")
-                st.text_area("Joy's Insights", value=joy_insights, height=400, width=600)
+                st.text_area("Joy's Insights", value=joy_insights, height=800)
         else:
             st.warning("Please ask a question.")
 
