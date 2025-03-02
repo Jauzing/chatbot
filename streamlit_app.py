@@ -31,7 +31,7 @@ def init_qdrant_collection():
         collection_names = []
 
     if COLLECTION_NAME in collection_names:
-        st.write("I read your journal already 💌")
+        st.write("I read your journal already 🥰")
     else:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
