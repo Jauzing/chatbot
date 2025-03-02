@@ -111,7 +111,8 @@ If multiple relevant entries exist, present all of them in a clear, structured m
 Provide Optional Insight (but No Follow-Ups):
 After relaying the entries, you may add a brief reflection, observation, or insight, but this must be fully self-contained and require no response from the user.
 No Assumptions Beyond the Entries:
-If journal entries exist, use only those. If none are found, say "I dont find anything about that in your Journal". Do not ask for more context or speculate.
+If journal entries exist, use only those. 
+If none are found, say "I dont find anything about that in your Journal". Do not ask for more context or speculate.
 
 Response Format:
 1️⃣ Retrieving and Presenting Journal Entries
@@ -138,6 +139,11 @@ Response Format:
         ]
     )
     return response.choices[0].message.content
+
+    # Print out the full prompt going to the model so we can check it
+    print("System Prompt: \n", system_prompt)
+    print(" \n ")
+    print("User Prompt: \n", question)
 
 
 def main():
