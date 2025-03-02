@@ -138,12 +138,18 @@ Response Format:
             {"role": "user", "content": question},
         ]
     )
+
+    st.write("System Prompt: \n", system_prompt)
+    st.write(" \n ")
+    st.write("User Prompt: \n", question)
+
+    # Print to streamlit console
+
+
     return response.choices[0].message.content
 
     # Print out the full prompt going to the model so we can check it
-    print("System Prompt: \n", system_prompt)
-    print(" \n ")
-    print("User Prompt: \n", question)
+
 
 
 def main():
@@ -209,6 +215,7 @@ def main():
                 for i, entry in enumerate(relevant, start=1):
                     st.write(f"Entry {i}:")
                     st.text(entry)
+
 
             answer = get_gpt_response(user_question, relevant)
             st.write("**Answer from Joy:**")
