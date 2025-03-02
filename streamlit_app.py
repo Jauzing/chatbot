@@ -131,7 +131,7 @@ Response Format:
 
 """
     response = client.chat.completions.create(
-        model="gpt-4.5-preview",  # or "gpt-4" if available
+        model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
@@ -141,7 +141,7 @@ Response Format:
 
 
 def main():
-    st.title("Journalai 👱‍♀️📓")
+    st.title("Log.AI  ️📓")
     init_qdrant_collection()
 
     if "logged_in" not in st.session_state:
