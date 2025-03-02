@@ -206,7 +206,8 @@ def split_joy_response(response_text):
 
 
 def main():
-    st.title("Log.AI  📓")
+    st.set_page_config(page_title="Log.AI", layout="wide")
+
     init_qdrant_collection()
 
     # -- Basic Login --
