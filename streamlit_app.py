@@ -115,9 +115,9 @@ If journal entries exist, use only those. If none are found, say so clearly. Do 
 
 Response Format:
 1️⃣ Retrieving and Presenting Journal Entries
-📖 Title: [Journal Entry Title]
-🗓️ Date: [Timestamp]
-✍️ Content:
+📖 Title: [Journal Entry Title] \n 
+🗓️ Date: [Timestamp] \n
+✍️ Content: \n
 
 [Full journal entry exactly as written]
 (Repeat this format for multiple entries if applicable.)
