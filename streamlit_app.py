@@ -23,6 +23,11 @@ COLLECTION_NAME = "journal_entries"
 
 
 def init_qdrant_collection():
+    """
+    Ensure the Qdrant collection exists for journal entries.
+    If it doesn't, create a new collection with the appropriate vector size.
+
+    """
     vector_size = 1536  # matches "text-embedding-3-small"
     try:
         collections_info = qdrant_client.get_collections()
@@ -50,6 +55,13 @@ def embed_text(text: str) -> list[float]:
 
 
 def store_journal_entry(user_id, text, weather=None, mood=None):
+
+    """
+    Takes the user's ID, journal text, weather, and mood.
+    Stores the journal entry in the Qdrant database.
+    And then... nothing. It just stores the entry.
+
+    """
     embedding = embed_text(text)
     payload = {
         "user_id": user_id,
@@ -71,6 +83,16 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
 
 
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
+
+    """
+    Retrieve the top K relevant journal entries based on the user's query.
+
+    takes the user's ID, query text, and the number of entries to retrieve.
+
+    returns a list of formatted journal entries.
+
+
+    """
     query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
@@ -97,14 +119,53 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     return top_entries
 
 
-def get_gpt_response(question, relevant_texts):
-    # Format retrieved journal entries correctly
+def split_joy_response(response_text):
+    """
+    Splits Joy's response into two parts:
+      - Left: Journal excerpts (everything before Joy's reflection in each entry)
+      - Right: Joy's insights (the reflection portion for each entry)
+    It assumes the model's response follows the structure:
+      ________
+      ...journal excerpt...
+      👱‍♀️ **Joy**:
+      ...joy's reflection...
+      ________
+    """
+    # Split by the entry separator (assumes at least 5 underscores separate entries)
+    entries = re.split(r"\n_{5,}\n", response_text)
+    entries = [entry.strip() for entry in entries if entry.strip()]
+
+    excerpts = []
+    insights = []
+    for entry in entries:
+        # Split each entry into the excerpt and Joy's insight based on the label
+        parts = re.split(r"👱‍♀️\s*\*\*Joy\*\*:\s*", entry)
+        if len(parts) == 2:
+            excerpt = parts[0].strip()
+            insight = parts[1].strip()
+        else:
+            # If splitting fails, consider the whole entry as the excerpt
+            excerpt = entry
+            insight = ""
+        excerpts.append(excerpt)
+        insights.append(insight)
+    # Combine multiple entries with clear separations
+    return "\n\n" + ("________\n".join(excerpts)), "\n\n" + ("________\n".join(insights))
+
+
+def stream_gpt_response(question, relevant_texts, left_placeholder, right_placeholder):
+    """
+    Streams the GPT response token by token and updates the two placeholders
+    for journal excerpts and Joy's insights as the tokens are generated.
+
+    Takes the user's question, relevant journal entries, and the two placeholders
+    for the left and right output boxes.
+    """
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
         context_str = "I didn't find anything about that in your Journal."
 
-    # Static instructions go into the system prompt.
     system_prompt = """
 You are **Joy**, a compassionate and insightful journaling companion. Your primary role is to retrieve relevant journal entries and present them **verbatim**, giving the user a complete and detailed recollection of their past thoughts, experiences, and reflections. You communicate in a warm, empathetic manner while maintaining a slightly formal and respectful style.
 
@@ -143,7 +204,6 @@ ________
 (Repeat this format for multiple entries if applicable.)
 """
 
-    # Dynamic content (journal entries and the user's question) go into the user message.
     user_prompt = f"""
 **Relevant Journal Entries:**
 
@@ -153,61 +213,48 @@ ________
 {question}
 """
 
-    response = client.chat.completions.create(
+    # Start the streaming request with stream=True
+    response_stream = client.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
-        ]
+        ],
+        stream=True  # Enable token streaming
     )
 
-    # Display debugging information in an expander
-    with st.expander("🔍 Debug Info (Click to Expand)"):
-        st.write("**System Prompt:**")
-        st.text(system_prompt)
-        st.write("**User Prompt:**")
-        st.text(user_prompt)
+    full_response = ""
+    # Stream tokens as they are generated
+    for chunk in response_stream:
+        token = chunk.choices[0].delta.get("content", "")
+        full_response += token
+        # As tokens accumulate, split the current full response
+        journal_excerpts, joy_insights = split_joy_response(full_response)
+        # Update the placeholders so the text appears as it is generated
+        left_placeholder.text_area("Journal pages", value=journal_excerpts, height=800)
+        right_placeholder.text_area("Joy's take", value=joy_insights, height=800)
 
-    return response.choices[0].message.content
-
-
-def split_joy_response(response_text):
-    """
-    Splits Joy's response into two parts:
-      - Left: Journal excerpts (everything before Joy's reflection in each entry)
-      - Right: Joy's insights (the reflection portion for each entry)
-    It assumes the model's response follows the structure:
-      ________
-      ...journal excerpt...
-      👱‍♀️ **Joy**:
-      ...joy's reflection...
-      ________
-    """
-    # Split by the entry separator (assumes at least 5 underscores separate entries)
-    entries = re.split(r"\n_{5,}\n", response_text)
-    entries = [entry.strip() for entry in entries if entry.strip()]
-
-    excerpts = []
-    insights = []
-    for entry in entries:
-        # Split each entry into the excerpt and Joy's insight based on the label
-        parts = re.split(r"👱‍♀️\s*\*\*Joy\*\*:\s*", entry)
-        if len(parts) == 2:
-            excerpt = parts[0].strip()
-            insight = parts[1].strip()
-        else:
-            # If splitting fails, consider the whole entry as the excerpt
-            excerpt = entry
-            insight = ""
-        excerpts.append(excerpt)
-        insights.append(insight)
-    # Combine multiple entries with clear separations
-    return "\n\n" + ("________\n".join(excerpts)), "\n\n" + ("________\n".join(insights))
+    return full_response
 
 
 def main():
-    st.set_page_config(page_title="Log.AI", layout="wide")
 
+    """
+
+    Main Streamlit UI for the JournalAI app.
+    Works as following:
+    - Logs in the user
+    - Takes user input
+    - Retrieves relevant journal entries
+    - Streams Joy's response and updates the two output boxes in real time
+    And then...cool stuff with vector embeddings and Qdrant.
+    And then... sorta cool stuff with GPT-4.
+    And then... bleh stuff with Streamlit.
+    And then... yeah, that's it.
+
+    """
+
+    st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
     # -- Basic Login --
@@ -230,10 +277,12 @@ def main():
                 st.error("Invalid credentials")
         return
 
-
-
     # -- Two BIG Output Boxes for Joy's Response --
     col_left, col_right = st.columns([3, 3])
+    with col_left:
+        left_placeholder = st.empty()
+    with col_right:
+        right_placeholder = st.empty()
 
     # User Input Field at the Bottom
     st.divider()
@@ -249,21 +298,8 @@ def main():
                 st.write("📚 **Top K Retrieved Entries**")
                 st.write(relevant)
 
-            # Get Joy's response from GPT
-            answer = get_gpt_response(user_question, relevant)
-
-            # Split the GPT response into journal excerpts and Joy's insights
-            journal_excerpts, joy_insights = split_joy_response(answer)
-
-            # Display the two parts in separate big output boxes
-            with col_left:
-                st.markdown("### 📓")
-                st.text_area("Journal pages", value=journal_excerpts, height=800)
-            with col_right:
-                st.markdown("### 👱‍♀️")
-                st.text_area("Joy's take", value=joy_insights, height=800)
-                # Increase font size for Joy's insights
-                st.markdown("<style>div[data-baseweb='textarea'] {font-size: 18px;}</style>", unsafe_allow_html=True)
+            # Stream Joy's response and update the two output boxes in real time
+            stream_gpt_response(user_question, relevant, left_placeholder, right_placeholder)
         else:
             st.warning("Please ask a question.")
 
