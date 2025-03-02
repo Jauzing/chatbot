@@ -133,7 +133,7 @@ ________
 
 [Full journal entry exactly as written], 
 
-👱‍♀️ Joy: 
+👱‍♀️ **Joy**: 
 [Joy’s brief insight or observation about the entry]
 
 ________
