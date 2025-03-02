@@ -135,6 +135,7 @@ Response Format:
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
+            {"role": "user", "content": relevant_texts},
             {"role": "user", "content": question},
         ]
     )
@@ -142,6 +143,8 @@ Response Format:
     st.write("System Prompt: \n", system_prompt)
     st.write(" \n ")
     st.write("User Prompt: \n", question)
+    st.write(" \n ")
+    st.write("User Entries: \n", relevant_texts)
 
     # Print to streamlit console
 
