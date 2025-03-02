@@ -262,6 +262,8 @@ def main():
             with col_right:
                 st.markdown("### 👱‍♀️")
                 st.text_area("Joy's take", value=joy_insights, height=800)
+                # Increase font size for Joy's insights
+                st.markdown("<style>div[data-baseweb='textarea'] {font-size: 18px;}</style>", unsafe_allow_html=True)
         else:
             st.warning("Please ask a question.")
 
