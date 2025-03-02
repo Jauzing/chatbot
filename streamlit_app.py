@@ -119,19 +119,20 @@ Response Guidelines:
 {context_str}
 
 Response Format:
- (☞ﾟヮﾟ)☞ Here are some pages from your journal ☜(ﾟヮﾟ☜)
+ 📓 Here are some pages from your journal 
 
-________________________🌹___________________________
-
-📖 Title: [Journal Entry Title] \n 
-🗓️ Date: [Timestamp] \n
-✍️ Content: \n
-[Full journal entry exactly as written], 
 ________
+
+📖 Journal Entry: **[Title]**
+🗓️ Date: **[Timestamp]** \n
+✍️ Content: \n
+
+[Full journal entry exactly as written], 
+
 👱‍♀️ Joy: 
 [Optional Insight or Reflection. Only if relevant, and never in a way that requires a reply]
 
-_________________________🌹__________________________
+________
 (Repeat this format for multiple entries if applicable.)
 
 
