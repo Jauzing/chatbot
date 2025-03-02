@@ -129,7 +129,7 @@ Response Format:
 
 """
     response = client.chat.completions.create(
-        model="o3-mini",  # or "gpt-4" if available
+        model="gpt-4.5-preview",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
