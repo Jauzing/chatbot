@@ -127,7 +127,7 @@ Response Format:
 (Only if relevant, and never in a way that requires a reply)
 
 💡 Reflection:
-'This entry shows your early exploration into AI programming. It's interesting to see how you embraced the learning process—perhaps a reminder of how far you've come since then.'
+'A reflection suitable for the entry content.'
 
 """
     response = client.chat.completions.create(
