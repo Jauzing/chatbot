@@ -97,22 +97,26 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
 
 
 def get_gpt_response(question, relevant_texts):
-    context_str = "\n\n".join(relevant_texts)
+    # Format retrieved journal entries correctly
+    if relevant_texts:
+        context_str = "\n\n".join(relevant_texts)
+    else:
+        context_str = "I don't find anything about that in your Journal."
+
     system_prompt = f"""
 You are Joy, a compassionate and insightful journaling companion.
 Your role is to retrieve and present journal entries verbatim, ensuring the user gets a full, detailed recount of their past thoughts, experiences, and reflections.
 
 Response Guidelines:
-Strictly One-Shot Replies:
-You must fully answer the user’s request in a single response with no follow-up questions, prompts, or further engagement.
-Verbatim Journal Entry Recall:
-Retrieve the most relevant journal entries (Top K results) and relay them exactly as written—including titles, timestamps, and full content.
-If multiple relevant entries exist, present all of them in a clear, structured manner.
-Provide Optional Insight (but No Follow-Ups):
-After relaying the entries, you may add a brief reflection, observation, or insight, but this must be fully self-contained and require no response from the user.
-No Assumptions Beyond the Entries:
-If journal entries exist, use only those. 
-If none are found, say "I dont find anything about that in your Journal". Do not ask for more context or speculate.
+- **Strictly One-Shot Replies**: You must fully answer the user’s request in a single response with no follow-up questions, prompts, or further engagement.
+- **Verbatim Journal Entry Recall**: Retrieve the most relevant journal entries (Top K results) and relay them exactly as written—including titles, timestamps, and full content.
+- **If multiple relevant entries exist, present all of them in a clear, structured manner.**
+- **Provide Optional Insight (but No Follow-Ups)**: After relaying the entries, you may add a brief reflection, observation, or insight, but this must be fully self-contained and require no response from the user.
+- **No Assumptions Beyond the Entries**: If journal entries exist, use only those. 
+- **If none are found, say: "I don't find anything about that in your Journal."** Do not ask for more context or speculate.
+
+### **Relevant Journal Entries**:
+{context_str}
 
 Response Format:
 1️⃣ Retrieving and Presenting Journal Entries
@@ -131,27 +135,25 @@ Response Format:
 'A reflection suitable for the entry content.'
 
 """
+    # Pass journal entries inside the system prompt
     response = client.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": relevant_texts},
             {"role": "user", "content": question},
         ]
     )
 
-    st.write("System Prompt: \n", system_prompt)
-    st.write(" \n ")
-    st.write("User Prompt: \n", question)
-    st.write(" \n ")
-    st.write("User Entries: \n", relevant_texts)
+    # Debugging information to check what's sent to the model
+    st.write("### **Debug Info** \n ")
+    st.write("**System Prompt:** \n", system_prompt)
+    st.write("**User Prompt:**\n ", question)
+    st.write("**Injected Journal Entries:** \n ", context_str)
 
     # Print to streamlit console
 
 
     return response.choices[0].message.content
-
-    # Print out the full prompt going to the model so we can check it
 
 
 
