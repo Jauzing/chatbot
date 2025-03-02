@@ -23,11 +23,6 @@ COLLECTION_NAME = "journal_entries"
 
 
 def init_qdrant_collection():
-    """
-    Ensure the Qdrant collection exists for journal entries.
-    If it doesn't, create a new collection with the appropriate vector size.
-
-    """
     vector_size = 1536  # matches "text-embedding-3-small"
     try:
         collections_info = qdrant_client.get_collections()
@@ -55,13 +50,6 @@ def embed_text(text: str) -> list[float]:
 
 
 def store_journal_entry(user_id, text, weather=None, mood=None):
-
-    """
-    Takes the user's ID, journal text, weather, and mood.
-    Stores the journal entry in the Qdrant database.
-    And then... nothing. It just stores the entry.
-
-    """
     embedding = embed_text(text)
     payload = {
         "user_id": user_id,
@@ -83,16 +71,6 @@ def store_journal_entry(user_id, text, weather=None, mood=None):
 
 
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
-
-    """
-    Retrieve the top K relevant journal entries based on the user's query.
-
-    takes the user's ID, query text, and the number of entries to retrieve.
-
-    returns a list of formatted journal entries.
-
-
-    """
     query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
@@ -157,9 +135,6 @@ def stream_gpt_response(question, relevant_texts, left_placeholder, right_placeh
     """
     Streams the GPT response token by token and updates the two placeholders
     for journal excerpts and Joy's insights as the tokens are generated.
-
-    Takes the user's question, relevant journal entries, and the two placeholders
-    for the left and right output boxes.
     """
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
@@ -226,7 +201,8 @@ ________
     full_response = ""
     # Stream tokens as they are generated
     for chunk in response_stream:
-        token = chunk.choices[0].delta.get("content", "")
+        # Access the token content via attribute (avoid using .get())
+        token = chunk.choices[0].delta.content or ""
         full_response += token
         # As tokens accumulate, split the current full response
         journal_excerpts, joy_insights = split_joy_response(full_response)
@@ -238,22 +214,6 @@ ________
 
 
 def main():
-
-    """
-
-    Main Streamlit UI for the JournalAI app.
-    Works as following:
-    - Logs in the user
-    - Takes user input
-    - Retrieves relevant journal entries
-    - Streams Joy's response and updates the two output boxes in real time
-    And then...cool stuff with vector embeddings and Qdrant.
-    And then... sorta cool stuff with GPT-4.
-    And then... bleh stuff with Streamlit.
-    And then... yeah, that's it.
-
-    """
-
     st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
