@@ -119,20 +119,23 @@ Response Guidelines:
 {context_str}
 
 Response Format:
-1️⃣ Retrieving and Presenting Journal Entries
+ (☞ﾟヮﾟ)☞ Here are some pages from your journal ☜(ﾟヮﾟ☜)
+
+________________________🌹___________________________
 
 📖 Title: [Journal Entry Title] \n 
 🗓️ Date: [Timestamp] \n
 ✍️ Content: \n
-[Full journal entry exactly as written]
+[Full journal entry exactly as written], 
+________
+👱‍♀️ Joy: 
+[Optional Insight or Reflection. Only if relevant, and never in a way that requires a reply]
 
+_________________________🌹__________________________
 (Repeat this format for multiple entries if applicable.)
 
-2️⃣ Optional Insight or Commentary
-(Only if relevant, and never in a way that requires a reply)
 
-💡 Reflection:
-'A reflection suitable for the entry content.'
+
 
 """
     # Pass journal entries inside the system prompt
