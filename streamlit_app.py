@@ -110,6 +110,7 @@ def split_joy_response(response_text):
     """
     entries = re.split(r"\n_{5,}\n", response_text)
     entries = [entry.strip() for entry in entries if entry.strip()]
+
     excerpts = []
     insights = []
     for entry in entries:
@@ -128,7 +129,7 @@ def split_joy_response(response_text):
 def stream_gpt_response(question, relevant_texts, left_placeholder, right_placeholder):
     """
     Streams the GPT response token by token and updates two placeholders.
-    Uses st.markdown to update the output in real time.
+    Then does a final re-render once the entire response is complete.
     """
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
@@ -142,32 +143,15 @@ You are **Joy**, a compassionate and insightful journaling companion. Your prima
 
 - **Single, Comprehensive Reply**: Answer the user’s request fully in one turn. Do not ask follow-up questions or engage in a back-and-forth dialogue. Provide all necessary information in one comprehensive response.
 
-- **Verbatim Entry Recall**: Retrieve the most relevant journal entries (Top **K** results provided by the system) and relay each **exactly** as the user wrote them. This includes preserving every detail — titles, timestamps, and the full content of each entry, with no edits or paraphrasing.
+- **Verbatim Entry Recall**: Retrieve the most relevant journal entries (Top **K** results provided by the system) and relay each **exactly** as the user wrote them.
 
-- **Multiple Entries**: If multiple relevant entries are found, present **all** of them in a clear, structured format. Clearly separate each entry so the user can distinguish them.
+- **Multiple Entries**: If multiple relevant entries are found, present all of them in a clear, structured format, separated by underscores.
 
-- **Always Provide Insight**: After each entry, include a brief **“Joy’s Reflection”** with a short insight.
+- **Always Provide Insight**: After each entry, include a short reflection.
 
-- **No External Additions**: Base your response **only** on the provided journal content.
+- **No External Additions**: Base your response only on the journal content.
 
 - **No Entry Found**: If no relevant journal entry exists, respond with: “I don’t find anything about that in your Journal.”
-
-**Response Format:** 
-
-Use the following template for each entry:
-
-________
-
-📖 **[Title]**
-
-🗓️ **[Timestamp]**:  
-
-[Journal entry exactly as written], 
-
-👱‍♀️ **Joy**: 
-[Joy’s brief insight]
-
-________
 """
 
     user_prompt = f"""
@@ -179,7 +163,6 @@ ________
 {question}
 """
 
-    # Start streaming with stream=True
     response_stream = client.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
@@ -190,16 +173,20 @@ ________
     )
 
     full_response = ""
-    # Stream tokens as they are generated
+    # Partial streaming updates
     for chunk in response_stream:
-        # Access token content
         token = getattr(chunk.choices[0].delta, "content", "") or ""
         full_response += token
-        # Split the response to update outputs
-        journal_excerpts, joy_insights = split_joy_response(full_response)
-        # Update the placeholders using markdown to avoid duplicate widget keys
-        left_placeholder.markdown(f"### Journal pages\n\n{journal_excerpts}")
-        right_placeholder.markdown(f"### Joy's take\n\n{joy_insights}")
+
+        # Quick partial split
+        excerpts, insights = split_joy_response(full_response)
+        left_placeholder.markdown(f"### Journal pages\n\n{excerpts}")
+        right_placeholder.markdown(f"### Joy's take\n\n{insights}")
+
+    # Final re-render after the loop is done:
+    final_excerpts, final_insights = split_joy_response(full_response)
+    left_placeholder.markdown(f"### Journal pages\n\n{final_excerpts}")
+    right_placeholder.markdown(f"### Joy's take\n\n{final_insights}")
 
     return full_response
 
@@ -208,7 +195,7 @@ def main():
     st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
-    # -- Basic Login --
+    # Basic Login
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
     if "user_id" not in st.session_state:
@@ -228,7 +215,7 @@ def main():
                 st.error("Invalid credentials")
         return
 
-    # -- Two BIG Output Boxes for Joy's Response --
+    # Two columns for the streaming output
     col_left, col_right = st.columns([3, 3])
     with col_left:
         left_placeholder = st.empty()
@@ -244,7 +231,8 @@ def main():
             with st.expander("Show Top K Retrieved Entries"):
                 st.write("📚 **Top K Retrieved Entries**")
                 st.write(relevant)
-            # Stream the response and update output containers in real time
+
+            # Stream the response (with partial updates) then do a final re-render
             stream_gpt_response(user_question, relevant, left_placeholder, right_placeholder)
         else:
             st.warning("Please ask a question.")
