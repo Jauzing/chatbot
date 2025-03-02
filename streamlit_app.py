@@ -115,15 +115,17 @@ If journal entries exist, use only those. If none are found, say so clearly. Do 
 
 Response Format:
 1️⃣ Retrieving and Presenting Journal Entries
+
 📖 Title: [Journal Entry Title] \n 
 🗓️ Date: [Timestamp] \n
 ✍️ Content: \n
-
 [Full journal entry exactly as written]
+
 (Repeat this format for multiple entries if applicable.)
 
 2️⃣ Optional Insight or Commentary
 (Only if relevant, and never in a way that requires a reply)
+
 💡 Reflection:
 'This entry shows your early exploration into AI programming. It's interesting to see how you embraced the learning process—perhaps a reminder of how far you've come since then.'
 
