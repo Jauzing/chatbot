@@ -128,8 +128,8 @@ Use the following template to format each journal entry and the reflection. Repe
 ________
 
 📖 **[Title]**
-🗓️ **[Timestamp]** 
-💌  Content: 
+
+🗓️ **[Timestamp]**:  
 
 [Full journal entry exactly as written], 
 
