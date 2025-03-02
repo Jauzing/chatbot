@@ -133,7 +133,7 @@ Response Format:
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
-        ], max_tokens=1500
+        ]
     )
     return response.choices[0].message.content
 
