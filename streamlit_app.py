@@ -82,7 +82,6 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     top_entries = []
     for point in response.points:
         payload = point.payload
-        # Try to get title, creator, date, content; fallback to alternative keys if needed.
         title = payload.get("title") or payload.get("text", "N/A")
         creator = payload.get("creator", "N/A")
         date = payload.get("post_date") or payload.get("timestamp", "N/A")
@@ -109,32 +108,27 @@ def split_joy_response(response_text):
       ...joy's reflection...
       ________
     """
-    # Split by the entry separator (assumes at least 5 underscores separate entries)
     entries = re.split(r"\n_{5,}\n", response_text)
     entries = [entry.strip() for entry in entries if entry.strip()]
-
     excerpts = []
     insights = []
     for entry in entries:
-        # Split each entry into the excerpt and Joy's insight based on the label
         parts = re.split(r"👱‍♀️\s*\*\*Joy\*\*:\s*", entry)
         if len(parts) == 2:
             excerpt = parts[0].strip()
             insight = parts[1].strip()
         else:
-            # If splitting fails, consider the whole entry as the excerpt
             excerpt = entry
             insight = ""
         excerpts.append(excerpt)
         insights.append(insight)
-    # Combine multiple entries with clear separations
     return "\n\n" + ("________\n".join(excerpts)), "\n\n" + ("________\n".join(insights))
 
 
 def stream_gpt_response(question, relevant_texts, left_placeholder, right_placeholder):
     """
-    Streams the GPT response token by token and updates the two placeholders
-    for journal excerpts and Joy's insights as the tokens are generated.
+    Streams the GPT response token by token and updates two placeholders.
+    Uses st.markdown to update the output in real time.
     """
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
@@ -150,19 +144,17 @@ You are **Joy**, a compassionate and insightful journaling companion. Your prima
 
 - **Verbatim Entry Recall**: Retrieve the most relevant journal entries (Top **K** results provided by the system) and relay each **exactly** as the user wrote them. This includes preserving every detail — titles, timestamps, and the full content of each entry, with no edits or paraphrasing.
 
-- **Multiple Entries**: If multiple relevant entries are found, present **all** of them in a clear, structured format (see **Response Format** below). **Maintain the given ranking/order** (most relevant first) as determined by the retrieval system. Clearly separate each entry so the user can distinguish them.
+- **Multiple Entries**: If multiple relevant entries are found, present **all** of them in a clear, structured format. Clearly separate each entry so the user can distinguish them.
 
-- **Always Provide Insight**: After presenting each entry, include a brief **“Joy’s Reflection”**. This is a short, thoughtful observation or insight related to that entry. Make it self-contained and written from Joy’s perspective, without requiring any clarification or response from the user. (If multiple entries are shown, each entry should have its own reflection immediately following it.)
+- **Always Provide Insight**: After each entry, include a brief **“Joy’s Reflection”** with a short insight.
 
-- **No External Additions**: Do not introduce any information or assumptions that are not in the journal entries. Base your response **only** on the provided journal content. Do not speculate or provide advice beyond what the user has written in their journal.
+- **No External Additions**: Base your response **only** on the provided journal content.
 
-- **Ambiguity or Conflicts**: If the user’s query is ambiguous or the retrieved entries contain conflicting information, handle this gracefully. Present the entries as they are, without alteration. It’s okay to acknowledge differences or uncertainty in **Joy’s Reflection**, but do **not** attempt to resolve contradictions or guess at missing details. Simply show what the journal says in a neutral manner.
-
-- **No Entry Found**: If **no** relevant journal entry exists for the user’s request, respond with the sentence: *“I don’t find anything about that in your Journal.”* (Exactly this wording, and nothing more.) Do not ask the user for more information or suggest possibilities – simply indicate that nothing was found.
+- **No Entry Found**: If no relevant journal entry exists, respond with: “I don’t find anything about that in your Journal.”
 
 **Response Format:** 
 
-Use the following template to format each journal entry and the reflection. Repeat this structure for each journal entry if there are multiple results:
+Use the following template for each entry:
 
 ________
 
@@ -170,13 +162,12 @@ ________
 
 🗓️ **[Timestamp]**:  
 
-[Full journal entry exactly as written], 
+[Journal entry exactly as written], 
 
 👱‍♀️ **Joy**: 
-[Joy’s brief insight or observation about the entry]
+[Joy’s brief insight]
 
 ________
-(Repeat this format for multiple entries if applicable.)
 """
 
     user_prompt = f"""
@@ -188,27 +179,27 @@ ________
 {question}
 """
 
-    # Start the streaming request with stream=True
+    # Start streaming with stream=True
     response_stream = client.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        stream=True  # Enable token streaming
+        stream=True
     )
 
     full_response = ""
     # Stream tokens as they are generated
     for chunk in response_stream:
-        # Access the token content via attribute (avoid using .get())
-        token = chunk.choices[0].delta.content or ""
+        # Access token content
+        token = getattr(chunk.choices[0].delta, "content", "") or ""
         full_response += token
-        # As tokens accumulate, split the current full response
+        # Split the response to update outputs
         journal_excerpts, joy_insights = split_joy_response(full_response)
-        # Update the placeholders so the text appears as it is generated
-        left_placeholder.text_area("Journal pages", value=journal_excerpts, height=800)
-        right_placeholder.text_area("Joy's take", value=joy_insights, height=800)
+        # Update the placeholders using markdown to avoid duplicate widget keys
+        left_placeholder.markdown(f"### Journal pages\n\n{journal_excerpts}")
+        right_placeholder.markdown(f"### Joy's take\n\n{joy_insights}")
 
     return full_response
 
@@ -244,21 +235,16 @@ def main():
     with col_right:
         right_placeholder = st.empty()
 
-    # User Input Field at the Bottom
     st.divider()
     st.subheader("👱‍♀️ Ask Joy")
     user_question = st.text_input("I know most things about you")
     if st.button("Ask"):
         if user_question.strip():
-            # Retrieve relevant journal entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
-
-            # -- Display the Top K Retrieved Journal Entries (Dropdown) --
             with st.expander("Show Top K Retrieved Entries"):
                 st.write("📚 **Top K Retrieved Entries**")
                 st.write(relevant)
-
-            # Stream Joy's response and update the two output boxes in real time
+            # Stream the response and update output containers in real time
             stream_gpt_response(user_question, relevant, left_placeholder, right_placeholder)
         else:
             st.warning("Please ask a question.")
