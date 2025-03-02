@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 from openai import OpenAI
 import os
@@ -82,9 +83,9 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     for point in response.points:
         payload = point.payload
         # Try to get title, creator, date, content; fallback to alternative keys if needed.
-        title   = payload.get("title") or payload.get("text", "N/A")
+        title = payload.get("title") or payload.get("text", "N/A")
         creator = payload.get("creator", "N/A")
-        date    = payload.get("post_date") or payload.get("timestamp", "N/A")
+        date = payload.get("post_date") or payload.get("timestamp", "N/A")
         content = payload.get("content", "N/A")
         entry_str = (
             f"Title: {title}\n"
@@ -170,6 +171,40 @@ ________
     return response.choices[0].message.content
 
 
+def split_joy_response(response_text):
+    """
+    Splits Joy's response into two parts:
+      - Left: Journal excerpts (everything before Joy's reflection in each entry)
+      - Right: Joy's insights (the reflection portion for each entry)
+    It assumes the model's response follows the structure:
+      ________
+      ...journal excerpt...
+      👱‍♀️ **Joy**:
+      ...joy's reflection...
+      ________
+    """
+    # Split by the entry separator (assumes at least 5 underscores separate entries)
+    entries = re.split(r"\n_{5,}\n", response_text)
+    entries = [entry.strip() for entry in entries if entry.strip()]
+
+    excerpts = []
+    insights = []
+    for entry in entries:
+        # Split each entry into the excerpt and Joy's insight based on the label
+        parts = re.split(r"👱‍♀️\s*\*\*Joy\*\*:\s*", entry)
+        if len(parts) == 2:
+            excerpt = parts[0].strip()
+            insight = parts[1].strip()
+        else:
+            # If splitting fails, consider the whole entry as the excerpt
+            excerpt = entry
+            insight = ""
+        excerpts.append(excerpt)
+        insights.append(insight)
+    # Combine multiple entries with clear separations
+    return "\n\n" + ("________\n".join(excerpts)), "\n\n" + ("________\n".join(insights))
+
+
 def main():
     st.title("Log.AI  📓")
     init_qdrant_collection()
@@ -194,22 +229,19 @@ def main():
                 st.error("Invalid credentials")
         return
 
-    # -- Debugging Options (Always Visible) --
+    # -- Debugging Options (Dropdowns) --
     with st.expander("Debugging Options"):
-        st.write("Any additional debugging details or state information can be shown here.")
+        st.write("Additional debugging details or state information can be shown here.")
 
-    # -- Output Areas: Two Side-by-Side Boxes --
+    # -- Display for Top K Retrieved Journal Entries (Dropdown) --
+    with st.expander("Show Top K Retrieved Entries"):
+        st.write("This dropdown shows the top retrieved journal excerpts for inspection.")
+
+    # -- Two BIG Output Boxes for Joy's Response --
+    st.subheader("Joy's Response")
     col_left, col_right = st.columns(2)
 
-    with col_left:
-        st.subheader("Journal Entry Excerpts")
-        # This box will be populated after asking a question
-
-    with col_right:
-        st.subheader("Joy's Insights")
-        # This box will be populated with Joy's GPT response
-
-    # -- User Input Field (Positioned at the Bottom) --
+    # User Input Field at the Bottom
     st.divider()
     st.subheader("👱‍♀️ Ask Joy")
     user_question = st.text_input("I know most things about you")
@@ -218,21 +250,19 @@ def main():
             # Retrieve relevant journal entries
             relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
-            # Update the left column with the retrieved journal entry excerpts
-            with col_left:
-                st.write("Retrieved Journal Entries:")
-                if relevant:
-                    for i, entry in enumerate(relevant, start=1):
-                        st.write(f"Entry {i}:")
-                        st.text(entry)
-                else:
-                    st.write("I don't find anything about that in your Journal.")
+            # Get Joy's response from GPT
+            answer = get_gpt_response(user_question, relevant)
 
-            # Get Joy's response and update the right column
+            # Split the GPT response into journal excerpts and Joy's insights
+            journal_excerpts, joy_insights = split_joy_response(answer)
+
+            # Display the two parts in separate big output boxes
+            with col_left:
+                st.markdown("### Journal Excerpts")
+                st.text_area("Journal Excerpts", value=journal_excerpts, height=400)
             with col_right:
-                answer = get_gpt_response(user_question, relevant)
-                st.write("Answer from Joy:")
-                st.write(answer)
+                st.markdown("### Joy's Insights")
+                st.text_area("Joy's Insights", value=joy_insights, height=400)
         else:
             st.warning("Please ask a question.")
 
