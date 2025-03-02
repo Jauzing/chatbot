@@ -259,10 +259,10 @@ def main():
             # Display the two parts in separate big output boxes
             with col_left:
                 st.markdown("### Journal Excerpts")
-                st.text_area("Journal Excerpts", value=journal_excerpts, height=400)
+                st.text_area("Journal Excerpts", value=journal_excerpts, height=800, width=600)
             with col_right:
                 st.markdown("### Joy's Insights")
-                st.text_area("Joy's Insights", value=joy_insights, height=400)
+                st.text_area("Joy's Insights", value=joy_insights, height=400, width=600)
         else:
             st.warning("Please ask a question.")
 
