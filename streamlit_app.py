@@ -49,27 +49,6 @@ def embed_text(text: str) -> list[float]:
     return response.data[0].embedding
 
 
-def store_journal_entry(user_id, text, weather=None, mood=None):
-    embedding = embed_text(text)
-    payload = {
-        "user_id": user_id,
-        "text": text,
-        "timestamp": str(datetime.datetime.now()),
-        "weather": weather,
-        "mood": mood
-    }
-    qdrant_client.upsert(
-        collection_name=COLLECTION_NAME,
-        points=[
-            qdrant_models.PointStruct(
-                id=str(uuid.uuid4()),
-                vector=embedding,
-                payload=payload
-            )
-        ]
-    )
-
-
 def retrieve_relevant_entries(user_id, query_text, top_k=3):
     query_embedding = embed_text(query_text)
     response = qdrant_client.query_points(
@@ -96,62 +75,36 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
     return top_entries
 
 
-def split_joy_response(response_text):
+def stream_gpt_response(
+    question,
+    relevant_texts,
+    left_placeholder,
+    right_placeholder
+):
     """
-    Splits Joy's response into two parts:
-      - Left: Journal excerpts (everything before Joy's reflection in each entry)
-      - Right: Joy's insights (the reflection portion for each entry)
-    It assumes the model's response follows the structure:
-      ________
-      ...journal excerpt...
-      👱‍♀️ **Joy**:
-      ...joy's reflection...
-      ________
+    Streams GPT response while:
+      - Streaming journal entries live into the left column.
+      - Switching to storing reflections (marked by "Reflection:") in the right column.
+      - Switching back when a new "Entry Title:" appears.
     """
-    entries = re.split(r"\n_{5,}\n", response_text)
-    entries = [entry.strip() for entry in entries if entry.strip()]
 
-    excerpts = []
-    insights = []
-    for entry in entries:
-        parts = re.split(r"👱‍♀️\s*\*\*Joy\*\*:\s*", entry)
-        if len(parts) == 2:
-            excerpt = parts[0].strip()
-            insight = parts[1].strip()
-        else:
-            excerpt = entry
-            insight = ""
-        excerpts.append(excerpt)
-        insights.append(insight)
-    return "\n\n" + ("________\n".join(excerpts)), "\n\n" + ("________\n".join(insights))
-
-
-def stream_gpt_response(question, relevant_texts, left_placeholder, right_placeholder):
-    """
-    Streams the GPT response token by token and updates two placeholders.
-    Then does a final re-render once the entire response is complete.
-    """
+    # Build initial context
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
         context_str = "I didn't find anything about that in your Journal."
 
     system_prompt = """
-You are **Joy**, a compassionate and insightful journaling companion. Your primary role is to retrieve relevant journal entries and present them **verbatim**, giving the user a complete and detailed recollection of their past thoughts, experiences, and reflections. You communicate in a warm, empathetic manner while maintaining a slightly formal and respectful style.
+You are **Joy**, a compassionate and insightful journaling companion. 
+Your primary role is to retrieve relevant journal entries and present them **verbatim**, giving the user a complete and detailed recollection of their past thoughts, experiences, and reflections. 
+You communicate in a warm, empathetic manner while maintaining a slightly formal and respectful style.
 
 **Response Guidelines:**
 
-- **Single, Comprehensive Reply**: Answer the user’s request fully in one turn. Do not ask follow-up questions or engage in a back-and-forth dialogue. Provide all necessary information in one comprehensive response.
-
-- **Verbatim Entry Recall**: Retrieve the most relevant journal entries (Top **K** results provided by the system) and relay each **exactly** as the user wrote them.
-
-- **Multiple Entries**: If multiple relevant entries are found, present all of them in a clear, structured format, separated by underscores.
-
+- **Verbatim Entry Recall**: Retrieve relevant journal entries exactly as the user wrote them.
+- **Multiple Entries**: If multiple relevant entries are found, present all in a structured format.
 - **Always Provide Insight**: After each entry, include a short reflection.
-
-- **No External Additions**: Base your response only on the journal content.
-
-- **No Entry Found**: If no relevant journal entry exists, respond with: “I don’t find anything about that in your Journal.”
+- **No Entry Found**: If no relevant journal entry exists, respond with: “I didn’t find anything about that in your Journal.”
 """
 
     user_prompt = f"""
@@ -163,6 +116,7 @@ You are **Joy**, a compassionate and insightful journaling companion. Your prima
 {question}
 """
 
+    # Create a stream from the LLM
     response_stream = client.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
@@ -172,21 +126,41 @@ You are **Joy**, a compassionate and insightful journaling companion. Your prima
         stream=True
     )
 
+    # States for toggling between journal and reflection text
+    journal_text = ""
+    reflection_text = ""
     full_response = ""
-    # Partial streaming updates
+    mode = "journal"  # Start in journal mode
+
     for chunk in response_stream:
-        token = getattr(chunk.choices[0].delta, "content", "") or ""
+        token = getattr(chunk.choices[0].delta, "content", "")
+        if not token:
+            continue
+
         full_response += token
 
-        # Quick partial split
-        excerpts, insights = split_joy_response(full_response)
-        left_placeholder.markdown(f"### Journal pages\n\n{excerpts}")
-        right_placeholder.markdown(f"### Joy's take\n\n{insights}")
+        # Switching logic: If "Reflection:" appears, switch to collecting insights
+        if "Reflection:" in token:
+            parts = token.split("Reflection:", 1)
+            journal_text += parts[0]
+            reflection_text += "Reflection:" + parts[1]
+            mode = "reflection"
+        elif "Entry Title:" in token:
+            # If we detect a new "Entry Title:", switch back to journal mode
+            mode = "journal"
+            journal_text += "\n\n" + token
+        else:
+            # Continue appending text based on current mode
+            if mode == "journal":
+                journal_text += token
+            else:
+                reflection_text += token
 
-    # Final re-render after the loop is done:
-    final_excerpts, final_insights = split_joy_response(full_response)
-    left_placeholder.markdown(f"### Journal pages\n\n{final_excerpts}")
-    right_placeholder.markdown(f"### Joy's take\n\n{final_insights}")
+        # Update journal streaming in real-time
+        left_placeholder.markdown(f"### Journal Pages\n\n{journal_text}")
+
+    # After completion, update insights in one go
+    right_placeholder.markdown(f"### Joy's Insights\n\n{reflection_text.strip()}")
 
     return full_response
 
@@ -215,7 +189,7 @@ def main():
                 st.error("Invalid credentials")
         return
 
-    # Two columns for the streaming output
+    # Two columns for output: left (journal pages), right (reflections)
     col_left, col_right = st.columns([3, 3])
     with col_left:
         left_placeholder = st.empty()
@@ -232,7 +206,7 @@ def main():
                 st.write("📚 **Top K Retrieved Entries**")
                 st.write(relevant)
 
-            # Stream the response (with partial updates) then do a final re-render
+            # Stream the response (with partial updates)
             stream_gpt_response(user_question, relevant, left_placeholder, right_placeholder)
         else:
             st.warning("Please ask a question.")
