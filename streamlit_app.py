@@ -137,18 +137,18 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     journal_text = ""
     reflection_text = ""
 
-
-
     # --- 📸 SET LOCAL AVATAR IMAGE ---
+    # Define the local image path (inside "static/" folder)
     avatar_filename = "static/noras.PNG"
     avatar_path = os.path.join(os.path.dirname(__file__), avatar_filename)
 
-    # Check if file exists and serve properly
+    # Check if the file exists and serve it correctly
     if os.path.exists(avatar_path):
+        # Streamlit needs a public URL or in-memory image, so we use `st.image()` workaround
         avatar_image = avatar_path
     else:
         st.warning(f"⚠️ Avatar image '{avatar_filename}' not found! Using fallback URL.")
-        avatar_image = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"
+        avatar_image = "https://github.com/Jauzing/chatbot/blob/main/static/noras.PNG"  # Replace with actual hosted URL
 
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
@@ -169,16 +169,8 @@ def stream_gpt_response(question, relevant_texts, chat_container):
             st.chat_message("system").markdown(f"**Inlägg:**\n\n{journal_text}")
 
         with reflection_placeholder:
-            # Inject custom HTML to enlarge the avatar image
-            custom_avatar_html = f"""
-            <div style="display: flex; align-items: center;">
-                <img src="{avatar_image}" style="width: 100px; height: 100px; border-radius: 50%;">
-                <div style="margin-left: 15px;">
-                    <p style="font-size: 16px;">{reflection_text}</p>
-                </div>
-            </div>
-            """
-            st.markdown(custom_avatar_html, unsafe_allow_html=True)
+            # ✅ FIX: Use `avatar_image`, whether it's a valid local file or fallback URL
+            st.chat_message("assistant", avatar=avatar_image).markdown(reflection_text)
 
     return full_response
 
