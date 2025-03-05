@@ -170,8 +170,8 @@ def main():
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             if st.button("Login"):
-                stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
-                stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
+                stored_username = st.secrets.get("ADMIN_USERNAME")
+                stored_password = st.secrets.get("ADMIN_PASSWORD")
                 if username == stored_username and password == stored_password:
                     st.session_state.logged_in = True
                     st.session_state.user_id = username
