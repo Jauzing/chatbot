@@ -66,28 +66,19 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
         date = payload.get("post_date") or payload.get("timestamp", "N/A")
         content = payload.get("content", "N/A")
         entry_str = (
-            f"Title: {title}\n"
-            f"Creator: {creator}\n"
-            f"Date: {date}\n"
-            f"Content: {content}"
+            f"📖 **{title}**\n"
+            f"🗓️ {date}\n\n"
+            f"{content}"
         )
         top_entries.append(entry_str)
     return top_entries
 
 
-def stream_gpt_response(
-    question,
-    relevant_texts,
-    left_placeholder,
-    right_placeholder
-):
+def stream_gpt_response(question, relevant_texts, chat_container):
     """
-    Streams GPT response while:
-      - Streaming journal entries live into the left column.
-      - Switching to storing reflections (marked by "👱‍♀️ **Joy**:") in the right column.
-      - Switching back when a new journal entry marker (e.g., "📖") appears.
+    Streams GPT response and dynamically updates a conversation-style display.
+    Journal entries appear first, then Joy's reflections.
     """
-    # Build initial context
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
@@ -97,24 +88,25 @@ def stream_gpt_response(
 You are **Joy**, a compassionate and insightful journaling companion. 
 Your primary role is to retrieve relevant journal entries and present them verbatim.
 After each entry, include a short reflection.
-When presenting multiple entries, precede each entry with "📖 Entry Title:" 
-and precede each reflection with "👱‍♀️ **Joy**:".
+Use this format:
+- **Journal Entry:** 📖 [Title] followed by the entry.
+- **Reflection:** 👱‍♀️ **Joy**: followed by your insights.
 
-If no entry is found, respond with: “I don’t find anything about that in your Journal.”
+If no relevant journal entry exists, respond with: "I don’t find anything about that in your Journal."
 """
 
     user_prompt = f"""
-**Relevant Journal Entries:**
+**Relevant Journal Entries:**  
 
-{context_str}
+{context_str}  
 
-**User Query:**
+**User Query:**  
 {question}
 """
 
-    # Create a stream from the LLM
+    # Start streaming response
     response_stream = client.chat.completions.create(
-        model="gpt-4o-mini",  # or "gpt-4" if available
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -122,91 +114,74 @@ If no entry is found, respond with: “I don’t find anything about that in you
         stream=True
     )
 
-    journal_text = ""
-    reflection_text = ""
     full_response = ""
+    message_buffer = ""
     mode = "journal"  # Start in journal mode
 
+    # Placeholder to continuously update chat messages
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
         if not token:
             continue
 
         full_response += token
+        message_buffer += token
 
-        # Switching logic:
-        # If the token includes the reflection marker, switch mode.
-        if "👱‍♀️ **Joy**:" in token:
-            # Split at the first occurrence of the reflection marker
-            parts = token.split("👱‍♀️ **Joy**:", 1)
-            journal_text += parts[0]
-            reflection_text += "👱‍♀️ **Joy**:" + parts[1]
+        # Detect transition from journal to reflection
+        if "👱‍♀️ **Joy**:" in message_buffer:
+            parts = message_buffer.split("👱‍♀️ **Joy**:", 1)
+            journal_text = parts[0].strip()
+            joy_reflection = "👱‍♀️ **Joy**:" + parts[1].strip()
             mode = "reflection"
-        # If a new journal entry marker appears (e.g., "📖"), switch back
-        elif "📖" in token:
-            mode = "journal"
-            journal_text += "\n\n" + token
         else:
-            if mode == "journal":
-                journal_text += token
-            else:
-                reflection_text += token
+            journal_text = message_buffer
+            joy_reflection = ""
 
-        # Update the left placeholder (journal) live
-        left_placeholder.markdown(f"### Journal Pages\n\n{journal_text}")
-
-    # After streaming, do a final re-render so that the reflection text is correctly shown on the right.
-    right_placeholder.markdown(f"### Joy's Insights\n\n{reflection_text.strip()}")
+        # Update chat interface
+        chat_container.empty()
+        with chat_container:
+            if journal_text:
+                st.chat_message("system").markdown(f"📖 **Journal Entry:**\n\n{journal_text}")
+            if joy_reflection:
+                st.chat_message("assistant").markdown(joy_reflection)
 
     return full_response
-
 
 
 def main():
     st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
-    # Basic Login
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-    if "user_id" not in st.session_state:
-        st.session_state.user_id = None
+    # Sticky input bar at the top
+    with st.container():
+        st.subheader("👱‍♀️ Ask Joy")
+        user_question = st.text_input("Ask anything about your journal...", key="user_input")
 
-    if not st.session_state.logged_in:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
-            stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
-            if username == stored_username and password == stored_password:
-                st.session_state.logged_in = True
-                st.session_state.user_id = username
-                st.success(f"Logged in as {username}")
-            else:
-                st.error("Invalid credentials")
-        return
+    # Collapsible section for journal entries
+    with st.expander("📖 Show Journal Entries"):
+        journal_entries_container = st.empty()
 
-    # Two columns for output: left (journal pages), right (reflections)
-    col_left, col_right = st.columns([3, 3])
-    with col_left:
-        left_placeholder = st.empty()
-    with col_right:
-        right_placeholder = st.empty()
+    # Chat conversation container
+    chat_container = st.container()
 
-    st.divider()
-    st.subheader("👱‍♀️ Ask Joy")
-    user_question = st.text_input("I know most things about you")
+    # Collapsible section for debugging
+    with st.expander("🔍 Debugging Options"):
+        st.write("Debugging logs will go here...")
+
+    # Fetch and display journal entries when user asks something
     if st.button("Ask"):
         if user_question.strip():
-            relevant = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
-            with st.expander("Show Top K Retrieved Entries"):
-                st.write("📚 **Top K Retrieved Entries**")
-                st.write(relevant)
+            relevant_entries = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
-            # Stream the response (with partial updates)
-            stream_gpt_response(user_question, relevant, left_placeholder, right_placeholder)
+            # Show journal entries in collapsible section
+            with journal_entries_container:
+                for entry in relevant_entries:
+                    st.write(entry)
+
+            # Stream Joy's response dynamically
+            stream_gpt_response(user_question, relevant_entries, chat_container)
         else:
-            st.warning("Please ask a question.")
+            st.warning("Please enter a question.")
 
 
 if __name__ == "__main__":
