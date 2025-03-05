@@ -84,10 +84,9 @@ def stream_gpt_response(
     """
     Streams GPT response while:
       - Streaming journal entries live into the left column.
-      - Switching to storing reflections (marked by "Reflection:") in the right column.
-      - Switching back when a new "Entry Title:" appears.
+      - Switching to storing reflections (marked by "👱‍♀️ **Joy**:") in the right column.
+      - Switching back when a new journal entry marker (e.g., "📖") appears.
     """
-
     # Build initial context
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
@@ -96,15 +95,12 @@ def stream_gpt_response(
 
     system_prompt = """
 You are **Joy**, a compassionate and insightful journaling companion. 
-Your primary role is to retrieve relevant journal entries and present them **verbatim**, giving the user a complete and detailed recollection of their past thoughts, experiences, and reflections. 
-You communicate in a warm, empathetic manner while maintaining a slightly formal and respectful style.
+Your primary role is to retrieve relevant journal entries and present them verbatim.
+After each entry, include a short reflection.
+When presenting multiple entries, precede each entry with "📖 Entry Title:" 
+and precede each reflection with "👱‍♀️ **Joy**:".
 
-**Response Guidelines:**
-
-- **Verbatim Entry Recall**: Retrieve relevant journal entries exactly as the user wrote them.
-- **Multiple Entries**: If multiple relevant entries are found, present all in a structured format.
-- **Always Provide Insight**: After each entry, include a short reflection.
-- **No Entry Found**: If no relevant journal entry exists, respond with: “I didn’t find anything about that in your Journal.”
+If no entry is found, respond with: “I don’t find anything about that in your Journal.”
 """
 
     user_prompt = f"""
@@ -126,43 +122,44 @@ You communicate in a warm, empathetic manner while maintaining a slightly formal
         stream=True
     )
 
-    # States for toggling between journal and reflection text
     journal_text = ""
     reflection_text = ""
     full_response = ""
     mode = "journal"  # Start in journal mode
 
     for chunk in response_stream:
-        token = getattr(chunk.choices[0].delta, "content", "")
+        token = getattr(chunk.choices[0].delta, "content", "") or ""
         if not token:
             continue
 
         full_response += token
 
-        # Switching logic: If "Reflection:" appears, switch to collecting insights
-        if "Reflection:" in token:
-            parts = token.split("Reflection:", 1)
+        # Switching logic:
+        # If the token includes the reflection marker, switch mode.
+        if "👱‍♀️ **Joy**:" in token:
+            # Split at the first occurrence of the reflection marker
+            parts = token.split("👱‍♀️ **Joy**:", 1)
             journal_text += parts[0]
-            reflection_text += "Reflection:" + parts[1]
+            reflection_text += "👱‍♀️ **Joy**:" + parts[1]
             mode = "reflection"
-        elif "Entry Title:" in token:
-            # If we detect a new "Entry Title:", switch back to journal mode
+        # If a new journal entry marker appears (e.g., "📖"), switch back
+        elif "📖" in token:
             mode = "journal"
             journal_text += "\n\n" + token
         else:
-            # Continue appending text based on current mode
             if mode == "journal":
                 journal_text += token
             else:
                 reflection_text += token
 
-        # Update journal streaming in real-time
+        # Update the left placeholder (journal) live
         left_placeholder.markdown(f"### Journal Pages\n\n{journal_text}")
 
-    # After completion, update insights in one go
+    # After streaming, do a final re-render so that the reflection text is correctly shown on the right.
     right_placeholder.markdown(f"### Joy's Insights\n\n{reflection_text.strip()}")
 
     return full_response
+
 
 
 def main():
