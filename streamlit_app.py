@@ -138,10 +138,17 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     journal_text = ""
     reflection_text = ""
 
-
     # --- 📸 SET LOCAL AVATAR IMAGE ---
-    # Get absolute path of image
-    avatar_path = os.path.join(os.path.dirname(__file__), "noras.png")
+    # Get absolute path of "noras.png" (assuming it's in the same directory)
+    avatar_filename = "noras.png"
+    avatar_path = os.path.join(os.path.dirname(__file__), avatar_filename)
+
+    # Check if the file exists
+    if os.path.exists(avatar_path):
+        avatar_url = st.image(avatar_path)
+    else:
+        st.warning(f"⚠️ Avatar image '{avatar_filename}' not found! Using default.")
+        avatar_url = None  # No avatar, but no crash.
 
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
@@ -161,7 +168,10 @@ def stream_gpt_response(question, relevant_texts, chat_container):
         with journal_placeholder:
             st.chat_message("system").markdown(f"**Inlägg:**\n\n{journal_text}")
         with reflection_placeholder:
-            st.chat_message("assistant", avatar=avatar_path).markdown(reflection_text)
+            if avatar_url:
+                st.chat_message("assistant", avatar=avatar_path).markdown(reflection_text)
+            else:
+                st.chat_message("assistant").markdown(reflection_text)  # No avatar fallback
 
     return full_response
 
