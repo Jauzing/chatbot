@@ -77,20 +77,27 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
 def stream_gpt_response(question, relevant_texts, chat_container):
     """
     Streams GPT response and dynamically updates a conversation-style display.
-    Journal entries appear first, then Joy's reflections.
+    - Journal entries appear in one message (system role).
+    - Reflection is triggered by "Reflection:" marker and displayed with a robot avatar (assistant role).
     """
+
+    # 1) Adjust system prompt so the model uses "Reflection:" as the marker
+    #    (instead of "👱‍♀️ **Joy**:").
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
         context_str = "I didn't find anything about that in your Journal."
 
     system_prompt = """
-You are **Joy**, a compassionate and insightful journaling companion. 
-Your primary role is to retrieve relevant journal entries and present them verbatim.
-After each entry, include a short reflection.
-Use this format:
-- **Journal Entry:** 📖 [Title] followed by the entry.
-- **Reflection:** 👱‍♀️ **Joy**: followed by your insights.
+You are a compassionate and insightful journaling companion. 
+Your primary role is to retrieve relevant journal entries verbatim and then provide a reflection. 
+Use the following format exactly:
+
+- **Journal Entry:** 
+  [Show the entries]
+
+- **Reflection:** 
+  [Your insight here]
 
 If no relevant journal entry exists, respond with: "I don’t find anything about that in your Journal."
 """
@@ -104,9 +111,8 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
 {question}
 """
 
-    # Start streaming response
     response_stream = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o-mini",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -116,9 +122,8 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
 
     full_response = ""
     message_buffer = ""
-    mode = "journal"  # Start in journal mode
 
-    # Use placeholders to prevent duplicate messages
+    # Placeholders for updating messages
     journal_placeholder = chat_container.empty()
     reflection_placeholder = chat_container.empty()
 
@@ -133,22 +138,26 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
         full_response += token
         message_buffer += token
 
-        # Detect transition from journal to reflection using the marker "👱‍♀️ **Joy**:"
-        if "👱‍♀️ **Joy**:" in message_buffer:
-            parts = message_buffer.split("👱‍♀️ **Joy**:", 1)
+        # 2) Detect reflection marker: "Reflection:"
+        if "Reflection:" in message_buffer:
+            parts = message_buffer.split("Reflection:", 1)
+            # Everything before "Reflection:" is the journal text
             journal_text = parts[0].strip()
-            reflection_text = "👱‍♀️ **Joy**:" + parts[1].strip()
-            mode = "reflection"
+            # Everything after is the reflection (including "Reflection:" itself)
+            reflection_text = "Reflection:" + parts[1].strip()
         else:
+            # No reflection yet, everything is still journal text
             journal_text = message_buffer
             reflection_text = ""
 
-        # Update placeholders in the same chat bubble to avoid duplicates
+        # Update placeholders
         with journal_placeholder:
-            st.chat_message("system").markdown(f"📖 **Journal Entry:**\n\n{journal_text}")
+            # Show the "journal" part as system
+            st.chat_message("system").markdown(f"**Journal Entry:**\n\n{journal_text}")
 
         with reflection_placeholder:
-            st.chat_message("assistant").markdown(reflection_text)
+            # Show reflection with an assistant + robot avatar
+            st.chat_message("assistant", avatar=":robot_face:").markdown(reflection_text)
 
     return full_response
 
@@ -170,30 +179,26 @@ def main():
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             if st.button("Login"):
-                stored_username = st.secrets.get("ADMIN_USERNAME")
-                stored_password = st.secrets.get("ADMIN_PASSWORD")
+                stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
+                stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
                 if username == stored_username and password == stored_password:
                     st.session_state.logged_in = True
                     st.session_state.user_id = username
                     st.success(f"Logged in as {username}")
                 else:
                     st.error("Invalid credentials")
-        return  # Stop further execution until login is successful
+        return
 
     # Main Application UI
-    # Sticky input bar at the top
     with st.container():
         st.subheader("👱‍♀️ Ask Joy")
         user_question = st.text_input("Ask anything about your journal...", key="user_input")
 
-    # Collapsible section for journal entries
     with st.expander("📖 Show Journal Entries"):
         journal_entries_container = st.empty()
 
-    # Chat conversation container
     chat_container = st.container()
 
-    # Collapsible section for debugging
     with st.expander("🔍 Debugging Options"):
         st.write("Debugging logs will go here...")
 
@@ -201,6 +206,10 @@ def main():
     if st.button("Ask"):
         if user_question.strip():
             # Use the logged-in user_id
+            if st.session_state.user_id is None:
+                st.error("⚠️ User ID is missing. Please log in or set a valid user_id.")
+                return
+
             relevant_entries = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
             # Display journal entries in a collapsible section
