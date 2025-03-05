@@ -140,15 +140,16 @@ def stream_gpt_response(question, relevant_texts, chat_container):
 
     # --- 📸 SET LOCAL AVATAR IMAGE ---
     # Get absolute path of "noras.png" (assuming it's in the same directory)
-    avatar_filename = "noras.png"
+    avatar_filename = "static/noras.PNG"
     avatar_path = os.path.join(os.path.dirname(__file__), avatar_filename)
 
     # Check if the file exists
     if os.path.exists(avatar_path):
-        avatar_url = st.image(avatar_path)
+        avatar_url = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"
+
     else:
         st.warning(f"⚠️ Avatar image '{avatar_filename}' not found! Using default.")
-        avatar_url = None  # No avatar, but no crash.
+        avatar_url = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"
 
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
