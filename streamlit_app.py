@@ -30,7 +30,6 @@ def init_qdrant_collection():
     except Exception as e:
         st.error(f"Error fetching collections: {e}")
         collection_names = []
-
     if COLLECTION_NAME in collection_names:
         st.write(" Qdrant is locked and loaded 😎")
     else:
@@ -77,12 +76,9 @@ def retrieve_relevant_entries(user_id, query_text, top_k=3):
 def stream_gpt_response(question, relevant_texts, chat_container):
     """
     Streams GPT response and dynamically updates a conversation-style display.
-    - Journal entries appear in one message (system role).
-    - Reflection is triggered by "Reflektion:" marker and displayed with a robot avatar (assistant role).
+    - Journal entries (the retrieved content) are shown as a system message.
+    - When the model outputs the marker "Reflektion:" the text following it is shown as the reflection.
     """
-
-    # 1) Adjust system prompt so the model uses "Reflection:" as the marker
-    #    (instead of "👱‍♀️ **Joy**:").
     if relevant_texts:
         context_str = "\n\n".join(relevant_texts)
     else:
@@ -90,15 +86,15 @@ def stream_gpt_response(question, relevant_texts, chat_container):
 
     system_prompt = """
 You are a compassionate and insightful journaling companion. 
-Your primary role is to retrieve relevant journal entries verbatim and then provide a reflection. 
-Always answer in Swedish.
+Your primary role is to retrieve relevant journal entries verbatim and then provide a reflection.
+All answers must be in Swedish.
 Use the following format exactly:
 
 - **Inlägg:** 
-  [Show the entries]
+  [Visa inläggen]
 
 - **Reflektion:** 
-  [Your insight here]
+  [Din insikt här]
 
 If no relevant journal entry exists, respond with: "Jag hittar inget om det i din dagbok 😐."
 """
@@ -123,7 +119,6 @@ If no relevant journal entry exists, respond with: "Jag hittar inget om det i di
 
     full_response = ""
     message_buffer = ""
-
     # Placeholders for updating messages
     journal_placeholder = chat_container.empty()
     reflection_placeholder = chat_container.empty()
@@ -131,34 +126,30 @@ If no relevant journal entry exists, respond with: "Jag hittar inget om det i di
     journal_text = ""
     reflection_text = ""
 
+    # Use a valid robot avatar image URL
+    robot_avatar_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Robot_icon.svg/1024px-Robot_icon.svg.png"
+
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
         if not token:
             continue
-
         full_response += token
         message_buffer += token
 
-        # 2) Detect reflection marker: "Reflection:"
+        # Detect reflection marker "Reflektion:" (preserve the marker)
         if "Reflektion:" in message_buffer:
             parts = message_buffer.split("Reflektion:", 1)
-            # Everything before "Reflection:" is the journal text
             journal_text = parts[0].strip()
-            # Everything after is the reflection (including "Reflection:" itself)
             reflection_text = "Reflektion:" + parts[1].strip()
         else:
-            # No reflection yet, everything is still journal text
             journal_text = message_buffer
             reflection_text = ""
 
-        # Update placeholders
+        # Update placeholders (update the same messages to avoid duplicates)
         with journal_placeholder:
-            # Show the "journal" part as system
-            st.chat_message("system").markdown(f"**Journal Entry:**\n\n{journal_text}")
-
+            st.chat_message("system").markdown(f"**Inlägg:**\n\n{journal_text}")
         with reflection_placeholder:
-            # Show reflection with an assistant + robot avatar
-            st.chat_message("assistant", avatar=":robot_face:").markdown(reflection_text)
+            st.chat_message("assistant", avatar=robot_avatar_url).markdown(reflection_text)
 
     return full_response
 
@@ -195,30 +186,22 @@ def main():
         st.subheader("👱‍♀️ Saga")
         user_question = st.text_input("Vad tänker du på?...", key="user_input")
 
-    with st.expander("📖 Visa dagboksinlägg"):
-        journal_entries_container = st.empty()
-
     chat_container = st.container()
 
-    with st.expander("🔍 Felsökning"):
-        st.write("Debugging logs will go here...")
-
-    # When the user clicks "Ask"
+    # Debugging section: Display Top K retrieved entries under "Felsökning"
     if st.button("Ask"):
         if user_question.strip():
-            # Use the logged-in user_id
             if st.session_state.user_id is None:
                 st.error("⚠️ User ID is missing. Please log in or set a valid user_id.")
                 return
 
             relevant_entries = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
-            # Display journal entries in a collapsible section
-            with journal_entries_container:
-                for entry in relevant_entries:
-                    st.write(entry)
+            with st.expander("🔍 Felsökning", expanded=True):
+                st.write("📚 **Top K Retrieved Entries:**")
+                st.write(relevant_entries)
 
-            # Stream Joy's response in a conversation-style format
+            # Stream GPT response in a conversation-style format
             stream_gpt_response(user_question, relevant_entries, chat_container)
         else:
             st.warning("Please enter a question.")
