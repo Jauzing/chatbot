@@ -138,18 +138,19 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     journal_text = ""
     reflection_text = ""
 
+
     # --- 📸 SET LOCAL AVATAR IMAGE ---
-    # Get absolute path of "noras.png" (assuming it's in the same directory)
+    # Define the local image path (inside "static/" folder)
     avatar_filename = "static/noras.PNG"
     avatar_path = os.path.join(os.path.dirname(__file__), avatar_filename)
 
-    # Check if the file exists
+    # Check if the file exists and serve it correctly
     if os.path.exists(avatar_path):
-        avatar_url = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"
-
+        # Streamlit needs a public URL or in-memory image, so we use `st.image()` workaround
+        avatar_image = avatar_path
     else:
-        st.warning(f"⚠️ Avatar image '{avatar_filename}' not found! Using default.")
-        avatar_url = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"
+        st.warning(f"⚠️ Avatar image '{avatar_filename}' not found! Using fallback URL.")
+        avatar_image = "https://raw.githubusercontent.com/your-user/your-repo/main/static/noras.png"  # Replace with actual hosted URL
 
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
@@ -168,11 +169,10 @@ def stream_gpt_response(question, relevant_texts, chat_container):
 
         with journal_placeholder:
             st.chat_message("system").markdown(f"**Inlägg:**\n\n{journal_text}")
+
         with reflection_placeholder:
-            if avatar_url:
-                st.chat_message("assistant", avatar=avatar_path).markdown(reflection_text)
-            else:
-                st.chat_message("assistant").markdown(reflection_text)  # No avatar fallback
+            # ✅ FIX: Use `avatar_image`, whether it's a valid local file or fallback URL
+            st.chat_message("assistant", avatar=avatar_image).markdown(reflection_text)
 
     return full_response
 
