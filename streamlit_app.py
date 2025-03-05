@@ -32,7 +32,7 @@ def init_qdrant_collection():
         collection_names = []
 
     if COLLECTION_NAME in collection_names:
-        st.write("I have your journal ready 🥰")
+        st.write(" Qdrant is locked and loaded 😎")
     else:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
@@ -78,7 +78,7 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     """
     Streams GPT response and dynamically updates a conversation-style display.
     - Journal entries appear in one message (system role).
-    - Reflection is triggered by "Reflection:" marker and displayed with a robot avatar (assistant role).
+    - Reflection is triggered by "Reflektion:" marker and displayed with a robot avatar (assistant role).
     """
 
     # 1) Adjust system prompt so the model uses "Reflection:" as the marker
@@ -91,15 +91,16 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     system_prompt = """
 You are a compassionate and insightful journaling companion. 
 Your primary role is to retrieve relevant journal entries verbatim and then provide a reflection. 
+Always answer in Swedish.
 Use the following format exactly:
 
-- **Journal Entry:** 
+- **Inlägg:** 
   [Show the entries]
 
-- **Reflection:** 
+- **Reflektion:** 
   [Your insight here]
 
-If no relevant journal entry exists, respond with: "I don’t find anything about that in your Journal."
+If no relevant journal entry exists, respond with: "Jag hittar inget om det i din dagbok 😐."
 """
 
     user_prompt = f"""
@@ -139,12 +140,12 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
         message_buffer += token
 
         # 2) Detect reflection marker: "Reflection:"
-        if "Reflection:" in message_buffer:
-            parts = message_buffer.split("Reflection:", 1)
+        if "Reflektion:" in message_buffer:
+            parts = message_buffer.split("Reflektion:", 1)
             # Everything before "Reflection:" is the journal text
             journal_text = parts[0].strip()
             # Everything after is the reflection (including "Reflection:" itself)
-            reflection_text = "Reflection:" + parts[1].strip()
+            reflection_text = "Reflektion:" + parts[1].strip()
         else:
             # No reflection yet, everything is still journal text
             journal_text = message_buffer
@@ -191,15 +192,15 @@ def main():
 
     # Main Application UI
     with st.container():
-        st.subheader("👱‍♀️ Ask Joy")
-        user_question = st.text_input("Ask anything about your journal...", key="user_input")
+        st.subheader("👱‍♀️ Saga")
+        user_question = st.text_input("Vad tänker du på?...", key="user_input")
 
-    with st.expander("📖 Show Journal Entries"):
+    with st.expander("📖 Visa dagboksinlägg"):
         journal_entries_container = st.empty()
 
     chat_container = st.container()
 
-    with st.expander("🔍 Debugging Options"):
+    with st.expander("🔍 Felsökning"):
         st.write("Debugging logs will go here...")
 
     # When the user clicks "Ask"
