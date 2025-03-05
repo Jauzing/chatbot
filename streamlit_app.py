@@ -156,6 +156,10 @@ def main():
     st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
+    # ✅ Ensure session state is initialized
+    if "user_id" not in st.session_state:
+        st.session_state.user_id = None  # Or set a default user_id if needed
+
     # Sticky input bar at the top
     with st.container():
         st.subheader("👱‍♀️ Ask Joy")
@@ -175,6 +179,10 @@ def main():
     # Fetch and display journal entries when user asks something
     if st.button("Ask"):
         if user_question.strip():
+            if st.session_state.user_id is None:
+                st.error("⚠️ User ID is missing. Please log in or set a valid user_id.")
+                return
+
             relevant_entries = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
             # Show journal entries in collapsible section
