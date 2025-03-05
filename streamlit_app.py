@@ -118,7 +118,7 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
     message_buffer = ""
     mode = "journal"  # Start in journal mode
 
-    # **Use placeholders to prevent message duplication**
+    # Use placeholders to prevent duplicate messages
     journal_placeholder = chat_container.empty()
     reflection_placeholder = chat_container.empty()
 
@@ -133,7 +133,7 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
         full_response += token
         message_buffer += token
 
-        # Detect transition from journal to reflection
+        # Detect transition from journal to reflection using the marker "👱‍♀️ **Joy**:"
         if "👱‍♀️ **Joy**:" in message_buffer:
             parts = message_buffer.split("👱‍♀️ **Joy**:", 1)
             journal_text = parts[0].strip()
@@ -143,7 +143,7 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
             journal_text = message_buffer
             reflection_text = ""
 
-        # **Update placeholders instead of adding new messages**
+        # Update placeholders in the same chat bubble to avoid duplicates
         with journal_placeholder:
             st.chat_message("system").markdown(f"📖 **Journal Entry:**\n\n{journal_text}")
 
@@ -152,14 +152,35 @@ If no relevant journal entry exists, respond with: "I don’t find anything abou
 
     return full_response
 
+
 def main():
     st.set_page_config(page_title="Log.AI", layout="wide")
     init_qdrant_collection()
 
-    # ✅ Ensure session state is initialized
+    # Initialize login session state if not already done
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
     if "user_id" not in st.session_state:
-        st.session_state.user_id = None  # Or set a default user_id if needed
+        st.session_state.user_id = None
 
+    # Login Section
+    if not st.session_state.logged_in:
+        with st.container():
+            st.subheader("Login")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            if st.button("Login"):
+                stored_username = st.secrets.get("ADMIN_USERNAME", "admin")
+                stored_password = st.secrets.get("ADMIN_PASSWORD", "password")
+                if username == stored_username and password == stored_password:
+                    st.session_state.logged_in = True
+                    st.session_state.user_id = username
+                    st.success(f"Logged in as {username}")
+                else:
+                    st.error("Invalid credentials")
+        return  # Stop further execution until login is successful
+
+    # Main Application UI
     # Sticky input bar at the top
     with st.container():
         st.subheader("👱‍♀️ Ask Joy")
@@ -176,21 +197,18 @@ def main():
     with st.expander("🔍 Debugging Options"):
         st.write("Debugging logs will go here...")
 
-    # Fetch and display journal entries when user asks something
+    # When the user clicks "Ask"
     if st.button("Ask"):
         if user_question.strip():
-            if st.session_state.user_id is None:
-                st.error("⚠️ User ID is missing. Please log in or set a valid user_id.")
-                return
-
+            # Use the logged-in user_id
             relevant_entries = retrieve_relevant_entries(st.session_state.user_id, user_question, top_k=5)
 
-            # Show journal entries in collapsible section
+            # Display journal entries in a collapsible section
             with journal_entries_container:
                 for entry in relevant_entries:
                     st.write(entry)
 
-            # Stream Joy's response dynamically
+            # Stream Joy's response in a conversation-style format
             stream_gpt_response(user_question, relevant_entries, chat_container)
         else:
             st.warning("Please enter a question.")
