@@ -39,7 +39,7 @@ def init_qdrant_collection():
         collection_names = []
 
     if COLLECTION_NAME in collection_names:
-        st.write("✅ Qdrant is locked and loaded 😎")
+        st.write(" ")  # Don't want any confirmation message atm, just works.
     else:
         qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
@@ -138,7 +138,10 @@ def stream_gpt_response(question, relevant_texts, chat_container):
     journal_text = ""
     reflection_text = ""
 
-    robot_avatar_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Robot_icon.svg/1024px-Robot_icon.svg.png"
+
+    # --- 📸 SET LOCAL AVATAR IMAGE ---
+    # Get absolute path of image
+    avatar_path = os.path.join(os.path.dirname(__file__), "noras.png")
 
     for chunk in response_stream:
         token = getattr(chunk.choices[0].delta, "content", "") or ""
@@ -158,10 +161,9 @@ def stream_gpt_response(question, relevant_texts, chat_container):
         with journal_placeholder:
             st.chat_message("system").markdown(f"**Inlägg:**\n\n{journal_text}")
         with reflection_placeholder:
-            st.chat_message("assistant", avatar=robot_avatar_url).markdown(reflection_text)
+            st.chat_message("assistant", avatar=avatar_path).markdown(reflection_text)
 
     return full_response
-
 
 # --- 🚀 MAIN APP ---
 def main():
